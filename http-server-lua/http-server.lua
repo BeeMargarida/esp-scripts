@@ -38,7 +38,7 @@ function receiver(sck, data)
     -- elseif string.find(data, "GET /") then
     --     sck:send("Hello!")    
     -- end
-    sck:send("Hi!")
+    sck:send(dht.read(5))
     sck:on("sent", function(conn) conn:close() end)
 end
 
