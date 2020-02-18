@@ -1,5 +1,8 @@
 dofile("wifi.lua")
 
+pin_server = 3
+gpio.mode(pin_server, gpio.OUTPUT)
+gpio.write(pin_server, gpio.HIGH)
 filename = "script.lua"
 
 -- Setup Server
@@ -31,10 +34,11 @@ function receiver(sck, data)
                 file.flush()
                 payloadFound = true
                 print("File written")
-                collectgarbage()
+                response[#response + 1] = "File received."
             else 
                 response[#response + 1] = "No file received."
             end
+            collectgarbage()
         end
     end
 
@@ -45,6 +49,7 @@ function receiver(sck, data)
             localSocket:close()
             response = nil
             file.close()
+            print("Execution")
             dofile(filename)
             collectgarbage()
         end
@@ -62,6 +67,7 @@ function setupServer()
     server = net.createServer(net.TCP)
     if server then
         server:listen(80, function(conn)
+            gpio.write(pin_server, gpio.LOW)
             print("Server Listening")
             conn:on("receive", receiver)
             collectgarbage()
