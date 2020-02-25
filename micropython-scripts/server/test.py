@@ -18,3 +18,5 @@ def exec():
         print("Boo")
     else:
         print("YEE")
+
+    return b
