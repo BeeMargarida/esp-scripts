@@ -2,8 +2,19 @@ import socket
 from machine import Pin
 from mqtt_library import MQTTClient
 
+def qs_parse(query):
+ 
+  parameters = {}
+  qs = query.split("?")[1]
+  ampersandSplit = qs.split("&")
+ 
+  for element in ampersandSplit:
+    equalSplit = element.split("=")
+    parameters[equalSplit[0]] = equalSplit[1]
+ 
+  return parameters
 
-def start(mqtt_client):
+def start(mqtt_client, topic_pub):
     led = Pin(0, Pin.OUT)
     led.on()
     addr = socket.getaddrinfo('0.0.0.0', 80)[0][-1]
@@ -30,6 +41,11 @@ def start(mqtt_client):
             conn.send('HTTP/1.0 404 Not Found\r\nContent-type: text/html\r\n\r\n')
             conn.close()
             break
+        
+        # Receive MQTT topic in POST query param
+        parameters = qs_parse(req.split(" ")[1])
+        if parameters["topic"] != None:
+            topic_pub = parameters["topic"]
 
         l = 0
         while True:
@@ -56,7 +72,8 @@ def start(mqtt_client):
             import script
             script_result = script.exec()
 
-            mqtt_client.publish(script_result)
+            # Publish script result in MQTT topic
+            mqtt_client.publish(topic_pub, '%s' % script_result)
 
             conn.send('HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n')
             conn.send("File executed")
