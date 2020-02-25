@@ -1,8 +1,9 @@
 import socket
 from machine import Pin
+from mqtt_library import MQTTClient
 
 
-def start():
+def start(mqtt_client):
     led = Pin(0, Pin.OUT)
     led.on()
     addr = socket.getaddrinfo('0.0.0.0', 80)[0][-1]
@@ -48,13 +49,14 @@ def start():
             conn.close()
         else:
             postquery = conn.read(l)
-            print(postquery)
             f = open("script.py", "w")
             f.write(postquery)
             f.close()
             
             import script
-            script.exec()
+            script_result = script.exec()
+
+            mqtt_client.publish(script_result)
 
             conn.send('HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n')
             conn.send("File executed")
