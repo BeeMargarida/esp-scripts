@@ -15,7 +15,7 @@ import wifi
 import server
 import mqtt
 
-mqtt_server = '192.168.1.179'
+mqtt_server = '10.250.6.238' #'192.168.1.179'
 client_id = ubinascii.hexlify(machine.unique_id())
 topic_pub = b'results'
 
