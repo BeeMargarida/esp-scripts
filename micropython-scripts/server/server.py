@@ -3,16 +3,21 @@ from machine import Pin
 from mqtt_library import MQTTClient
 
 def qs_parse(query):
- 
-  parameters = {}
-  qs = query.split("?")[1]
-  ampersandSplit = qs.split("&")
- 
-  for element in ampersandSplit:
-    equalSplit = element.split("=")
-    parameters[equalSplit[0]] = equalSplit[1]
- 
-  return parameters
+
+    parameters = {}
+    qs = query.split("?")
+    if len(qs) < 2:
+        return parameters
+
+    qs = qs[1]
+    ampersandSplit = qs.split("&")
+
+    for element in ampersandSplit:
+        equalSplit = element.split("=")
+        parameters[equalSplit[0]] = equalSplit[1]
+
+    return parameters
+
 
 def start(mqtt_client, topic_pub):
     led = Pin(0, Pin.OUT)
@@ -41,10 +46,10 @@ def start(mqtt_client, topic_pub):
             conn.send('HTTP/1.0 404 Not Found\r\nContent-type: text/html\r\n\r\n')
             conn.close()
             break
-        
+
         # Receive MQTT topic in POST query param
         parameters = qs_parse(req.split(" ")[1])
-        if parameters["topic"] != None:
+        if len(parameters) > 0 and parameters["topic"] != None:
             topic_pub = parameters["topic"]
 
         l = 0
@@ -55,7 +60,7 @@ def start(mqtt_client, topic_pub):
             if 'Content-Length: ' in h:
                 try:
                     l = int(h[16:-2])
-                    print ('Content Length is : ', l)
+                    print('Content Length is : ', l)
                 except:
                     continue
 
@@ -68,13 +73,13 @@ def start(mqtt_client, topic_pub):
             f = open("script.py", "w")
             f.write(postquery)
             f.close()
-            
+
             import script
-            script_result = script.exec()
+            script_result = script.exec(mqtt_client, "data")
 
             # Publish script result in MQTT topic
             mqtt_client.publish(topic_pub, '%s' % script_result)
 
             conn.send('HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n')
-            conn.send("File executed")
+            conn.send("File executed: %s" % script_result)
             conn.close()
