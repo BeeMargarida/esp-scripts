@@ -75,7 +75,7 @@ def start(mqtt_client, topic_pub):
             f.close()
 
             import script
-            script_result = script.exec(mqtt_client, "data")
+            script_result = script.exec(mqtt_client)
 
             # Publish script result in MQTT topic
             mqtt_client.publish(topic_pub, '%s' % script_result)
