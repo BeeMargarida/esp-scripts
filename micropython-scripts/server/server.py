@@ -74,12 +74,15 @@ def start(mqtt_client, topic_pub):
             f.write(postquery)
             f.close()
 
-            import script
-            script_result = script.exec(mqtt_client, "data")
-
-            # Publish script result in MQTT topic
-            mqtt_client.publish(topic_pub, '%s' % script_result)
+            print("File written!")
 
             conn.send('HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n')
-            conn.send("File executed: %s" % script_result)
+            conn.send("File saved")
             conn.close()
+
+            import script
+            script_result = script.exec(mqtt_client)
+
+            # Publish script result in MQTT topic
+            # mqtt_client.publish(topic_pub, '%s' % script_result)
+
