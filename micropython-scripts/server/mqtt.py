@@ -35,9 +35,9 @@ def restart_and_reconnect():
 def start(mqtt_server, client_id):
     try:
         client = connect(mqtt_server, client_id)
+        return client
     except OSError as e:
         restart_and_reconnect()
-    return client
 
     # while True:
     #     try:
