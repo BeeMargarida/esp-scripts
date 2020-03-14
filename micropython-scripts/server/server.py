@@ -1,6 +1,14 @@
 import socket
 from machine import Pin
-from mqtt_library import MQTTClient
+import os
+import machine
+import ubinascii
+import mqtt
+import sys
+
+mqtt_client = None
+client_id = ubinascii.hexlify(machine.unique_id())
+mqtt_server = '192.168.1.179' #'10.250.7.209'
 
 def qs_parse(query):
 
@@ -19,7 +27,9 @@ def qs_parse(query):
     return parameters
 
 
-def start(mqtt_client, topic_pub):
+def start(topic_pub):
+    global mqtt_client
+
     led = Pin(0, Pin.OUT)
     led.on()
     addr = socket.getaddrinfo('0.0.0.0', 80)[0][-1]
@@ -70,6 +80,27 @@ def start(mqtt_client, topic_pub):
             conn.close()
         else:
             postquery = conn.read(l)
+
+            print(postquery)
+
+            # Cancel previous script and disconnect MQTT client
+            try:
+
+                import script
+                script.cancel()
+                print("AFTER CANCEL")
+                if mqtt_client != None:
+                    mqtt_client.disconnect()
+                print("AFTER DISCONNECT")
+                os.remove("script.py")
+                print("AFTER REMOVE")
+                del sys.modules['script']
+                print("AFTER CANCEL")
+
+            except Exception as e:
+                print("whoops")
+                print(e)
+            
             f = open("script.py", "w")
             f.write(postquery)
             f.close()
@@ -80,9 +111,9 @@ def start(mqtt_client, topic_pub):
             conn.send("File saved")
             conn.close()
 
+            # Setup MQTT Client
+            mqtt_client = mqtt.start(mqtt_server, client_id)
+
             import script
             script_result = script.exec(mqtt_client)
-
-            # Publish script result in MQTT topic
-            # mqtt_client.publish(topic_pub, '%s' % script_result)
 
