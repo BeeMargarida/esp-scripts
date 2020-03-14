@@ -8,7 +8,7 @@ import sys
 
 mqtt_client = None
 client_id = ubinascii.hexlify(machine.unique_id())
-mqtt_server = '192.168.1.179' #'10.250.7.209'
+mqtt_server = '192.168.1.157' #'10.250.7.209'
 
 def qs_parse(query):
 
@@ -88,14 +88,10 @@ def start(topic_pub):
 
                 import script
                 script.cancel()
-                print("AFTER CANCEL")
                 if mqtt_client != None:
                     mqtt_client.disconnect()
-                print("AFTER DISCONNECT")
                 os.remove("script.py")
-                print("AFTER REMOVE")
                 del sys.modules['script']
-                print("AFTER CANCEL")
 
             except Exception as e:
                 print("whoops")
