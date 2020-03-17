@@ -1,7 +1,7 @@
 # This file is executed on every boot (including wake-boot from deepsleep)
 #import esp
 #esp.osdebug(None)
-import uos
+# import uos
 #uos.dupterm(None, 1) # disable REPL on UART(0)
 import gc
 #import webrepl
@@ -13,7 +13,5 @@ gc.collect()
 import wifi
 import server
 
-topic_pub = b'results'
-
 wifi.connect()
-server.start(topic_pub)
+server.start()
