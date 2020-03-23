@@ -6,12 +6,12 @@ from mqtt_as import config, MQTTClient
 import uasyncio as asyncio
 
 mqtt_client = None
-mqtt_server = '192.168.1.179'  # '10.250.7.209'
+mqtt_server = '192.168.1.157'  # '10.250.7.209'
 
 @asyncio.coroutine
 def serve(reader, writer):
     global mqtt_client
-    
+
     try:
         req = (yield from reader.readline())
         req = req.decode("utf-8")
@@ -42,7 +42,7 @@ def serve(reader, writer):
         yield from writer.awrite("HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\nReceived file was empty.\r\n")
         yield from writer.aclose()
     else:
-        postquery =  (yield from reader.readexactly(l))
+        postquery = (yield from reader.readexactly(l))
         print(postquery)
 
         # Delete previous script
@@ -50,6 +50,7 @@ def serve(reader, writer):
             import script
             os.remove("script.py")
             del sys.modules['script']
+            mqtt_client.close()
             gc.collect()
         except Exception as e:
             print("whoops")
