@@ -2,16 +2,19 @@ import os
 import gc
 import sys
 import logging
+import ujson
 from mqtt_as import config, MQTTClient
 import uasyncio as asyncio
 
 mqtt_client = None
 mqtt_server = '192.168.1.179'  # '10.250.7.209'
+running_script = False
 
 @asyncio.coroutine
 def serve(reader, writer):
     global mqtt_client
-    
+    global running_script
+
     try:
         req = (yield from reader.readline())
         req = req.decode("utf-8")
@@ -20,10 +23,23 @@ def serve(reader, writer):
     except Exception as e:
         return
 
+    request_info = req.find('GET /ping')
+    if request_info != -1:
+        data = {}
+        data["status"] = 1
+        data["running"] = running_script
+        data_str = ujson.dumps(data)
+        data_len = len(bytes(data_str, "utf-8"))
+        await writer.awrite("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length:" + str(data_len) + "\r\n\r\n" + data_str)
+        await asyncio.sleep(0.1)
+        await writer.aclose()
+        return
+
     request_info = req.find('POST /execute')
     if request_info == -1:
-        yield from writer.awrite("HTTP/1.0 404 OK\r\nContent-type: text/html\r\n\r\nFile saved.\r\n")
-        yield from writer.aclose()
+        await writer.awrite("HTTP/1.1 404\r\nContent-Type: text/plain\r\nContent-Length: 9\r\n\r\nNot found")
+        await asyncio.sleep(0.1)
+        await writer.aclose()
         return
 
     l = 0
@@ -39,10 +55,10 @@ def serve(reader, writer):
                 continue
 
     if l == 0:
-        yield from writer.awrite("HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\nReceived file was empty.\r\n")
+        yield from writer.awrite("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nReceived file was empty.\r\n")
         yield from writer.aclose()
     else:
-        postquery =  (yield from reader.readexactly(l))
+        postquery = (yield from reader.readexactly(l))
         print(postquery)
 
         # Delete previous script
@@ -61,17 +77,18 @@ def serve(reader, writer):
 
         print("File written!")
 
-        yield from writer.awrite("HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\nFile saved.\r\n")
+        yield from writer.awrite("HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\nFile saved.\r\n")
         yield from writer.aclose()
 
         import script
 
-        mqtt_client._cb= script.on_input
+        mqtt_client._cb = script.on_input
         mqtt_client._connect_handler = script.conn_han
 
         await mqtt_client.connect()
 
         script.exec(mqtt_client)
+        running_script = True
         gc.collect()
 
 
@@ -87,6 +104,7 @@ def start():
 
     logging.basicConfig(level=logging.INFO)
     # logging.basicConfig(level=logging.DEBUG)
+
     loop = asyncio.get_event_loop()
     # mem_info()
     loop.create_task(asyncio.start_server(serve, "0.0.0.0", 80))
