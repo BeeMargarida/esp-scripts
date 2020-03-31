@@ -10,6 +10,7 @@ mqtt_client = None
 mqtt_server = '192.168.1.179'  # '10.250.7.209'
 running_script = False
 
+
 @asyncio.coroutine
 def serve(reader, writer):
     global mqtt_client
@@ -66,6 +67,7 @@ def serve(reader, writer):
             import script
             os.remove("script.py")
             del sys.modules['script']
+            mqtt_client.close()
             gc.collect()
         except Exception as e:
             print("whoops")
