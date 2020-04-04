@@ -11,6 +11,20 @@ mqtt_server = '192.168.1.179'  # '10.250.7.209'
 running_script = False
 
 
+async def start_script():
+    import script
+
+    mqtt_client._cb = script.on_input
+    mqtt_client._connect_handler = script.conn_han
+    
+    await asyncio.sleep(0.5)
+    await mqtt_client.connect()
+    
+    await script.exec(mqtt_client)
+
+    running_script = True
+
+
 @asyncio.coroutine
 def serve(reader, writer):
     global mqtt_client
@@ -66,9 +80,10 @@ def serve(reader, writer):
         # Delete previous script
         try:
             import script
+            script.stop()
             os.remove("script.py")
             del sys.modules['script']
-            mqtt_client.close()
+            mqtt_client.disconnect()
             gc.collect()
         except Exception as e:
             print("whoops")
@@ -83,16 +98,8 @@ def serve(reader, writer):
         yield from writer.awrite("HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\nFile saved.\r\n")
         yield from writer.aclose()
 
-        import script
-
-        mqtt_client._cb = script.on_input
-        mqtt_client._connect_handler = script.conn_han
-
-        await mqtt_client.connect()
-
-        script.exec(mqtt_client)
-        running_script = True
-        gc.collect()
+        loop.create_task(start_script())
+        # gc.collect()
 
 
 def start():
@@ -108,7 +115,7 @@ def start():
     logging.basicConfig(level=logging.INFO)
     # logging.basicConfig(level=logging.DEBUG)
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_event_loop(runq_len=64, waitq_len=64)
     # mem_info()
     loop.create_task(asyncio.start_server(serve, "0.0.0.0", 80))
     loop.run_forever()
