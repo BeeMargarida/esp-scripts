@@ -26,20 +26,21 @@ def serve(reader, writer):
 
     request_info = req.find('GET /ping')
     if request_info != -1:
+        print("GET /ping")
         data = {}
         data["status"] = 1
         data["running"] = running_script
         data_str = ujson.dumps(data)
         data_len = len(bytes(data_str, "utf-8"))
         await writer.awrite("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length:" + str(data_len) + "\r\n\r\n" + data_str)
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.5)
         await writer.aclose()
         return
 
     request_info = req.find('POST /execute')
     if request_info == -1:
         await writer.awrite("HTTP/1.1 404\r\nContent-Type: text/plain\r\nContent-Length: 9\r\n\r\nNot found")
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.5)
         await writer.aclose()
         return
 
