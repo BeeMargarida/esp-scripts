@@ -10,21 +10,6 @@ mqtt_client = None
 mqtt_server = '192.168.1.179'  # '10.250.7.209'
 running_script = False
 
-
-async def start_script():
-    import script
-
-    mqtt_client._cb = script.on_input
-    mqtt_client._connect_handler = script.conn_han
-    
-    await asyncio.sleep(0.5)
-    await mqtt_client.connect()
-    
-    await script.exec(mqtt_client)
-
-    running_script = True
-
-
 @asyncio.coroutine
 def serve(reader, writer):
     global mqtt_client
@@ -75,7 +60,6 @@ def serve(reader, writer):
         yield from writer.aclose()
     else:
         postquery = (yield from reader.readexactly(l))
-        print(postquery)
 
         # Delete previous script
         try:
@@ -92,14 +76,26 @@ def serve(reader, writer):
         f = open("script.py", "w")
         f.write(postquery)
         f.close()
+        gc.collect()
 
         print("File written!")
 
         yield from writer.awrite("HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\nFile saved.\r\n")
         yield from writer.aclose()
 
-        loop.create_task(start_script())
-        # gc.collect()
+        import script
+        gc.collect()
+
+        mqtt_client._cb = script.on_input
+        mqtt_client._connect_handler = script.conn_han
+        
+        await asyncio.sleep(0.5)
+        await mqtt_client.connect()
+        
+        await script.exec(mqtt_client)
+
+        running_script = True
+        gc.collect()
 
 
 def start():
