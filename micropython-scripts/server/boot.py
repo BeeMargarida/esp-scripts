@@ -6,12 +6,12 @@
 import gc
 #import webrepl
 #webrepl.start()
-gc.collect()
+#gc.collect()
 
 ##############################
 
 import wifi
-import server
+from server import Server
 
 wifi.connect()
-server.start()
+server = Server()
