@@ -54,6 +54,22 @@ class Server():
             await asyncio.sleep(0)
             self.failsafe()
 
+    async def delete_script(self):
+        try:
+            # delete previous script
+            import script
+            gc.collect()
+
+            script.stop()
+            os.remove("script.py")
+            del sys.modules['script']
+
+            if self.mqtt_client.isconnected():
+                await self.mqtt_client.disconnect()
+
+        except Exception as e:
+            print("Script Delete Error")
+
     def serve(self, reader, writer):
         try:
             req = await reader.readline()
@@ -72,14 +88,14 @@ class Server():
             data_str = ujson.dumps(data)
             data_len = len(bytes(data_str, "utf-8"))
             await writer.awrite("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length:" + str(data_len) + "\r\n\r\n" + data_str)
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(1)
             await writer.aclose()
             return
 
         request_info = req.find('POST /execute')
         if request_info == -1:
             await writer.awrite("HTTP/1.1 404\r\nContent-Type: text/plain\r\nContent-Length: 9\r\n\r\nNot found")
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(1)
             await writer.aclose()
             return
 
@@ -87,7 +103,6 @@ class Server():
         l = 0
         while True:
             h = await reader.readline()
-            print(h)
             if not h or h == b'\r\n':
                 break
             if 'Content-Length: ' in h:
@@ -108,28 +123,18 @@ class Server():
                     tmp = await reader.read(l)
                     read_l += len(tmp)
                     postquery += tmp
+
             except MemoryError as e:
-                await writer.awrite("HTTP/1.1 500\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
-                await asyncio.sleep(0.5)
+                print("Memory Error")
+                await self.delete_script()
+
+                await writer.awrite("HTTP/1.1 413\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
+                await asyncio.sleep(1)
                 await writer.aclose()
+
                 loop = asyncio.get_event_loop()
                 loop.create_task(self.failsafe())
                 return
-
-            try:
-                # delete previous script
-                import script
-                gc.collect()
-
-                script.stop()
-                os.remove("script.py")
-                del sys.modules['script']
-
-                if self.mqtt_client.isconnected():
-                    await self.mqtt_client.disconnect()
-
-            except Exception as e:
-                print("Script Delete Error")
 
             try:
                 # save script in .py file
@@ -140,13 +145,16 @@ class Server():
 
                 print("File written!")
 
+                # delete previous script
+                await self.delete_script()
+
                 # call and execute script
                 import script
 
                 self.mqtt_client._cb = script.on_input
                 self.mqtt_client._connect_handler = script.conn_han
 
-                # await asyncio.sleep(0.5)
+                # await asyncio.sleep(1)
                 await self.mqtt_client.connect()
 
                 print("MQTT Client Connected")
@@ -161,15 +169,23 @@ class Server():
                 gc.collect()
 
             except MemoryError as e:
-                await writer.awrite("HTTP/1.1 500\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
-                await asyncio.sleep(0.5)
+                print("Memory Error")
+                await writer.awrite("HTTP/1.1 413\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
+                await asyncio.sleep(1)
                 await writer.aclose()
+                
                 loop = asyncio.get_event_loop()
                 loop.create_task(self.failsafe())
                 return
+            except OSError as e:
+                # Exception raised when MQTT Broker address is wrong
+                yield from writer.awrite("HTTP/1.1 424\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
+                yield from writer.aclose()
+                return
             except Exception as e:
+                print(e)
                 await writer.awrite("HTTP/1.1 500\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(1)
                 await writer.aclose()
                 return
         return
