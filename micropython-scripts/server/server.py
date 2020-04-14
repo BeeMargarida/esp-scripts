@@ -22,7 +22,6 @@ class Server():
         self.mqtt_client = MQTTClient(config)
 
         logging.basicConfig(level=logging.INFO)
-        # logging.basicConfig(level=logging.DEBUG)
 
         self.run()
 
@@ -88,7 +87,7 @@ class Server():
             data_str = ujson.dumps(data)
             data_len = len(bytes(data_str, "utf-8"))
             await writer.awrite("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length:" + str(data_len) + "\r\n\r\n" + data_str)
-            await asyncio.sleep(1)
+            # await asyncio.sleep(1)
             await writer.aclose()
             return
 
@@ -98,6 +97,9 @@ class Server():
             await asyncio.sleep(1)
             await writer.aclose()
             return
+        
+        # delete previous script
+        await self.delete_script()
 
         # Get total length of script
         l = 0
@@ -126,10 +128,7 @@ class Server():
 
             except MemoryError as e:
                 print("Memory Error")
-                await self.delete_script()
-
                 await writer.awrite("HTTP/1.1 413\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
-                await asyncio.sleep(1)
                 await writer.aclose()
 
                 loop = asyncio.get_event_loop()
@@ -144,9 +143,6 @@ class Server():
                 gc.collect()
 
                 print("File written!")
-
-                # delete previous script
-                await self.delete_script()
 
                 # call and execute script
                 import script
@@ -171,7 +167,6 @@ class Server():
             except MemoryError as e:
                 print("Memory Error")
                 await writer.awrite("HTTP/1.1 413\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
-                await asyncio.sleep(1)
                 await writer.aclose()
                 
                 loop = asyncio.get_event_loop()
@@ -185,7 +180,6 @@ class Server():
             except Exception as e:
                 print(e)
                 await writer.awrite("HTTP/1.1 500\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
-                await asyncio.sleep(1)
                 await writer.aclose()
                 return
         return
