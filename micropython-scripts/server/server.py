@@ -27,10 +27,10 @@ class Server():
 
     def run(self):
         try:
-            loop = asyncio.get_event_loop()
+            self.loop = asyncio.get_event_loop()
             self.server = asyncio.start_server(self.serve, "0.0.0.0", 80)
-            self.server_task = loop.create_task(self.server)
-            loop.run_forever()
+            self.server_task = self.loop.create_task(self.server)
+            self.loop.run_forever()
         except Exception as e:
             print(e)
 
@@ -38,8 +38,9 @@ class Server():
         print("Starting failsafe")
         try:
             # cancel server task
-            loop = asyncio.get_event_loop()
-            await self.server_task.cancel()
+            self.server.close()
+            self.server_task.cancel()
+
 
             if self.mqtt_client.isconnected():
                 await self.mqtt_client.disconnect()
@@ -48,10 +49,12 @@ class Server():
 
             gc.collect()
             print("Starting up server...")
-            self.server_task = loop.create_task(self.server)
-        except TypeError:
+            self.server_task = self.loop.create_task(self.server)
+        except Exception as e:
+            print("Failsafe exception")
             await asyncio.sleep(0)
-            self.failsafe()
+            self.loop.create_task(self.failsafe())
+            return
 
     async def delete_script(self):
         try:
@@ -66,8 +69,11 @@ class Server():
             if self.mqtt_client.isconnected():
                 await self.mqtt_client.disconnect()
 
+            gc.collect()
+
         except Exception as e:
             print("Script Delete Error")
+            print(e)
 
     def serve(self, reader, writer):
         try:
@@ -97,7 +103,7 @@ class Server():
             await asyncio.sleep(1)
             await writer.aclose()
             return
-        
+
         # delete previous script
         await self.delete_script()
 
@@ -119,33 +125,30 @@ class Server():
             await writer.aclose()
         else:
             try:
+                # save script in .py file
+                f = open("script.py", "w")
                 read_l = 0
-                postquery = b''
                 while read_l < l:
                     tmp = await reader.read(l)
                     read_l += len(tmp)
-                    postquery += tmp
+                    f.write(tmp)
+                f.close()
+                gc.collect()
 
             except MemoryError as e:
                 print("Memory Error")
                 await writer.awrite("HTTP/1.1 413\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
                 await writer.aclose()
 
-                loop = asyncio.get_event_loop()
-                loop.create_task(self.failsafe())
+                self.loop.create_task(self.failsafe())
                 return
 
             try:
-                # save script in .py file
-                f = open("script.py", "w")
-                f.write(postquery)
-                f.close()
-                gc.collect()
-
                 print("File written!")
 
                 # call and execute script
                 import script
+                gc.collect()
 
                 self.mqtt_client._cb = script.on_input
                 self.mqtt_client._connect_handler = script.conn_han
@@ -168,9 +171,8 @@ class Server():
                 print("Memory Error")
                 await writer.awrite("HTTP/1.1 413\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
                 await writer.aclose()
-                
-                loop = asyncio.get_event_loop()
-                loop.create_task(self.failsafe())
+
+                self.loop.create_task(self.failsafe())
                 return
             except OSError as e:
                 # Exception raised when MQTT Broker address is wrong
