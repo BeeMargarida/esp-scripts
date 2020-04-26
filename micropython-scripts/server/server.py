@@ -93,7 +93,6 @@ class Server():
             data_str = ujson.dumps(data)
             data_len = len(bytes(data_str, "utf-8"))
             await writer.awrite("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length:" + str(data_len) + "\r\n\r\n" + data_str)
-            # await asyncio.sleep(1)
             await writer.aclose()
             return
 
@@ -129,7 +128,7 @@ class Server():
                 f = open("script.py", "w")
                 read_l = 0
                 while read_l < l:
-                    tmp = await reader.read(l)
+                    tmp = await reader.readline()
                     read_l += len(tmp)
                     f.write(tmp)
                 f.close()
@@ -153,7 +152,6 @@ class Server():
                 self.mqtt_client._cb = script.on_input
                 self.mqtt_client._connect_handler = script.conn_han
 
-                # await asyncio.sleep(1)
                 await self.mqtt_client.connect()
 
                 print("MQTT Client Connected")
