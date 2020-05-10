@@ -1,0 +1,14 @@
+version: '2'
+services:
+  micropython:
+    image: micropython_docker
+    build: .
+    ports:
+      - 8080-8089:8080
+    command: sh -c "./micropython boot.py"
+    depends_on:
+      - mosquitto
+    links:
+      - "mosquitto:mosquitto"
+  mosquitto:
+    image: eclipse-mosquitto
