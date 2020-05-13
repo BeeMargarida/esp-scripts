@@ -9,7 +9,7 @@ Download this folder or repo and in this directory run:
 * `docker-compose build`
 * `docker-compose up` or `docker-compose up --scale micropython=10` if you want 10 instances of the micropython instance (with `-d` if you want to run in detached mode)
 
-This commands will run the wanted instances of microptyhon containers as well as a mosquitto broker.
+These commands will run the wanted instances of microptyhon containers as well as a mosquitto broker.
 
 The micropython container contains the needed scripts for the wanted functionalities and it starts the server automatically. If you want access to the IPs, run: 
 
