@@ -1,0 +1,73 @@
+version: '2'
+services:
+  micropython:
+    image: micropython_docker
+    build: .
+    ports:
+      - 8080-8089:8080
+    command: sh -c "./micropython boot.py $$(cat /etc/hostname)"
+    depends_on:
+      - mosquitto
+    links:
+      - "mosquitto:mosquitto"
+  mosquitto:
+    container_name: mosquitto
+    image: eclipse-mosquitto
+    # volumes:
+      # - ./conf/mosquitto/:/mosquitto/config/
+      # - ./tig/data/mqtt/:/mosquitto/data/
+      # - ./tig/log/mqtt/:/mosquitto/log/
+    # restart: always
+    # networks:
+    #   net:
+    #     ipv4_address: 172.23.0.3
+  influxdb:
+    container_name: influxdb
+    image: influxdb
+    ports:
+      - "8086:8086"
+    volumes:
+      - ./tig/data/influxdb:/var/lib/influxdb
+      - ./tig/conf/influxdb:/etc/influxdb/
+    restart: always
+    # networks:
+    #   net:
+    #     ipv4_address: 172.23.0.2
+  grafana:
+    container_name: grafana
+    image: grafana/grafana
+    user: "0"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana-data:/var/lib/grafana:Z
+      # - /tig/data/grafana:/var/lib/grafana
+      # - /tig/log/grafana:/var/log/grafana
+      # - /tig/conf/grafana/grafana.ini:/etc/grafana/grafana.ini
+    links:
+      - influxdb
+    restart: always
+    # networks:
+    #   net:
+    #     ipv4_address: 172.23.0.4
+  bridge:
+    container_name: bridge
+    build: ./bridge
+    volumes:
+      - ./bridge/mqtt2influxdb.yml:/etc/bigclown/mqtt2influxdb.yml
+    command: sh -c "mqtt2influxdb -c /etc/bigclown/mqtt2influxdb.yml"
+    depends_on:
+      - mosquitto
+      - influxdb
+    links:
+      - mosquitto
+    # networks:
+    #   net:
+    #     ipv4_address: 172.23.0.6
+networks:
+  net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.23.0.0/24

@@ -1,0 +1,44 @@
+mqtt:
+  host: mosquitto
+  port: 1883
+
+influxdb:
+  host: influxdb
+  port: 8086
+  database: telemetry
+
+points:
+  - measurement: uptime
+    topic: telemetry/+/uptime
+    fields:
+      value: $.payload
+    tags:
+      id: $.topic[1]
+
+  - measurement: ram
+    topic: telemetry/+/ram
+    fields:
+        value: $.payload
+    tags:
+        id: $.topic[1]
+
+  - measurement: memory
+    topic: telemetry/+/memory
+    fields:
+        value: $.payload
+    tags:
+        id: $.topic[1]
+  
+  - measurement: reboot_reason
+    topic: telemetry/+/reboot_reason
+    fields:
+        value: $.payload
+    tags:
+        id: $.topic[1]
+
+  - measurement: connectivity
+    topic: telemetry/+/connectivity
+    fields:
+        value: $.payload
+    tags:
+        id: $.topic[1]
