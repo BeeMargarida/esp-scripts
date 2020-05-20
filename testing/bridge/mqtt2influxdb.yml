@@ -15,30 +15,42 @@ points:
     tags:
       id: $.topic[1]
 
-  - measurement: ram
-    topic: telemetry/+/ram
+  - measurement: last_payload
+    topic: telemetry/+/last_payload
     fields:
-        value: $.payload
+      value: $.payload
     tags:
-        id: $.topic[1]
+      id: $.topic[1]
 
-  - measurement: memory
-    topic: telemetry/+/memory
+  - measurement: free_ram
+    topic: telemetry/+/free_ram
     fields:
-        value: $.payload
+      value: $.payload
     tags:
-        id: $.topic[1]
-  
-  - measurement: reboot_reason
-    topic: telemetry/+/reboot_reason
-    fields:
-        value: $.payload
-    tags:
-        id: $.topic[1]
+      id: $.topic[1]
 
-  - measurement: connectivity
-    topic: telemetry/+/connectivity
+  - measurement: alloc_ram
+    topic: telemetry/+/alloc_ram
     fields:
-        value: $.payload
+      value: $.payload
     tags:
-        id: $.topic[1]
+      id: $.topic[1]
+
+  - measurement: flash_size
+    topic: telemetry/+/flash_size
+    fields:
+      value: $.payload
+    tags:
+      id: $.topic[1]
+  # - measurement: reboot_reason
+  #   topic: telemetry/+/reboot_reason
+  #   fields:
+  #     value: $.payload
+  #   tags:
+  #     id: $.topic[1]
+  # - measurement: connectivity
+  #   topic: telemetry/+/connectivity
+  #   fields:
+  #     value: $.payload
+  #   tags:
+  #     id: $.topic[1]
