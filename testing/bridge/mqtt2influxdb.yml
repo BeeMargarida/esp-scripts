@@ -16,11 +16,12 @@ points:
       id: $.topic[1]
 
   - measurement: last_payload
-    topic: telemetry/+/last_payload
+    topic: telemetry/+/+/last_payload
     fields:
       value: $.payload
     tags:
       id: $.topic[1]
+      payload_id: $.topic[2]
 
   - measurement: free_ram
     topic: telemetry/+/free_ram
@@ -42,15 +43,17 @@ points:
       value: $.payload
     tags:
       id: $.topic[1]
-  # - measurement: reboot_reason
-  #   topic: telemetry/+/reboot_reason
-  #   fields:
-  #     value: $.payload
-  #   tags:
-  #     id: $.topic[1]
-  # - measurement: connectivity
-  #   topic: telemetry/+/connectivity
-  #   fields:
-  #     value: $.payload
-  #   tags:
-  #     id: $.topic[1]
+
+  - measurement: running
+    topic: telemetry/+/running
+    fields:
+      value: $.payload
+    tags:
+      id: $.topic[1]
+
+  - measurement: nodes
+    topic: telemetry/+/nodes
+    fields:
+      value: $.payload
+    tags:
+      id: $.topic[1]
