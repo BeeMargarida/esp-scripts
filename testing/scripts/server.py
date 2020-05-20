@@ -20,14 +20,15 @@ class Server():
 
     def __init__(self, client_id):
         print("Starting up server...")
-        self.running_http = True
-        self.running_script = False
+        self.running_script = 0
         self.mqtt_client = None
         self.mqtt_client_metrics = None
         self.mqtt_server = 'mosquitto'  # '10.250.7.209'
         self.memory_error = False
+        self.assigned_nodes = ""
         self.start_time = utime.ticks_ms()
         self.last_payload = 0
+        self.last_payload_id = None
         self.client_id = client_id
 
         config['ssid'] = 'Calou oh puto do andar de cima'
@@ -72,8 +73,9 @@ class Server():
                     await self.mqtt_client_metrics.publish(
                         "telemetry/%s/uptime" % self.client_id, str(utime.ticks_diff(current_time, self.start_time)), qos=0)
 
-                    await self.mqtt_client_metrics.publish(
-                        "telemetry/%s/last_payload" % self.client_id, str(self.last_payload), qos=0)
+                    if self.last_payload_id:
+                        await self.mqtt_client_metrics.publish(
+                            "telemetry/%s/%s/last_payload" % (self.client_id, self.last_payload_id), str(self.last_payload), qos=0)
 
                     await self.mqtt_client_metrics.publish(
                         "telemetry/%s/free_ram" % self.client_id, str(gc.mem_free()), qos=0)
@@ -81,16 +83,22 @@ class Server():
                     await self.mqtt_client_metrics.publish(
                         "telemetry/%s/alloc_ram" % self.client_id, str(gc.mem_alloc()), qos=0)
 
+                    await self.mqtt_client_metrics.publish(
+                        "telemetry/%s/running" % self.client_id, str(self.running_script), qos=0)
+
+                    await self.mqtt_client_metrics.publish(
+                        "telemetry/%s/nodes" % self.client_id, self.assigned_nodes, qos=0)
+
                     # await self.mqtt_client_metrics.publish(
                     #     "telemetry/%s/info" % self.client_id, os.uname(), qos=1)
 
                     if sys.platform != "linux":
-                        self.mqtt_client_metrics.publish(
+                        await self.mqtt_client_metrics.publish(
                             "telemetry/%s/flash_size" % self.client_id, str(esp.flash_size()), qos=0)
                     else:
                         info = os.statvfs("./")
                         flash_size = info[3] * info[0]
-                        self.mqtt_client_metrics.publish(
+                        await self.mqtt_client_metrics.publish(
                             "telemetry/%s/flash_size" % self.client_id, str(flash_size), qos=0)
 
                     await asyncio.sleep(5)
@@ -129,6 +137,7 @@ class Server():
             import script
 
             script.stop()
+            self.running_script = 0
             del sys.modules['script']
             os.remove("script.py")
 
@@ -189,7 +198,8 @@ class Server():
             await writer.aclose()
         else:
             try:
-                self.last_payload = l
+                self.last_payload = str(l)
+                self.last_payload_id = str(utime.ticks_ms())
 
                 # delete previous script
                 await self.delete_script()
@@ -237,6 +247,8 @@ class Server():
 
                 await self.mqtt_client.connect()
 
+                self.assigned_nodes = script.get_nodes()
+
                 print("MQTT Client Connected")
 
                 # send HTTP response
@@ -246,7 +258,7 @@ class Server():
                 loop = asyncio.get_event_loop()
                 loop.create_task(script.exec(self.mqtt_client))
 
-                self.running_script = True
+                self.running_script = 1
 
             except MemoryError as e:
                 print("Memory Error")
@@ -263,6 +275,9 @@ class Server():
                 return
             except Exception as e:
                 print(e)
+                del sys.modules['script']
+                os.remove("script.py")
+
                 await writer.awrite("HTTP/1.1 500\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
                 await writer.aclose()
                 return
