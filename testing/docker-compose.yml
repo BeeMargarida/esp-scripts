@@ -8,6 +8,9 @@ services:
     command: sh -c "./micropython boot.py $$(cat /etc/hostname)"
     depends_on:
       - mosquitto
+      - bridge
+      - grafana
+      - influxdb
     links:
       - "mosquitto:mosquitto"
   mosquitto:
