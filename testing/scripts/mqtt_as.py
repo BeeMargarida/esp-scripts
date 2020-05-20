@@ -244,9 +244,7 @@ class MQTT_base:
             await self._send_str(self._pswd)
         # Await CONNACK
         # read causes ECONNABORTED if broker is out; triggers a reconnect.
-        print("BEFORE READ")
         resp = await self._as_read(4)
-        print("AFTER READ")
         self.dprint('Connected to broker.')  # Got CONNACK
         if resp[3] != 0 or resp[0] != 0x20 or resp[1] != 0x02:
             raise OSError(-1)  # Bad CONNACK e.g. authentication fail.
@@ -554,16 +552,12 @@ class MQTTClient(MQTT_base):
         clean = self._clean if self._has_connected else self._clean_init
         try:
             await self._connect(clean)
-        except Exception as e:
-            print("Exception")
-            print(e)
+        except Exception:
             self.close()
             raise
-        print("CONNECTED")
         self.rcv_pids.clear()
         # If we get here without error broker/LAN must be up.
         self._isconnected = True
-        print("CONNECT %s" % str(self._isconnected))
         self._in_connect = False  # Low level code can now check connectivity.
         loop = asyncio.get_event_loop()
         loop.create_task(self._wifi_handler(True))  # User handler.
