@@ -40,12 +40,11 @@ class Server():
             config['client_id'] = unique_id() + "metrics"
             self.mqtt_client_metrics = MQTTClient(config)
         else:
-            # config['client_id'] = ubinascii.hexlify(client_id)
-            # self.mqtt_client = MQTTClient(**config)
+            config['client_id'] = ubinascii.hexlify(client_id)
+            self.mqtt_client = MQTTClient(**config)
 
             MQTTClient.DEBUG = True
-            config['client_id'] = ubinascii.hexlify(client_id)
-            print(config)
+            config['client_id'] = ubinascii.hexlify(str(client_id) + "metrics")
             self.mqtt_client_metrics = MQTTClient(**config)
 
         if sys.platform != "linux":
@@ -70,29 +69,30 @@ class Server():
                     await self.mqtt_client_metrics.connect()
                 else:
                     current_time = utime.ticks_ms()
-                    print("here")
-                    print(self.mqtt_client_metrics.isconnected())
-                    print("telemetry/%s/uptime" % self.client_id)
-                    print(str(utime.ticks_diff(current_time, self.start_time)))
-
                     await self.mqtt_client_metrics.publish(
                         "telemetry/%s/uptime" % self.client_id, str(utime.ticks_diff(current_time, self.start_time)), qos=0)
-                    # await self.mqtt_client_metrics.publish(
-                    #     "telemetry/%s/last_payload" % self.client_id, self.last_payload, qos=1)
-                    # await self.mqtt_client_metrics.publish(
-                    #     "telemetry/%s/ram" % self.client_id, gc.mem_free(), qos=1)
+
+                    await self.mqtt_client_metrics.publish(
+                        "telemetry/%s/last_payload" % self.client_id, str(self.last_payload), qos=0)
+
+                    await self.mqtt_client_metrics.publish(
+                        "telemetry/%s/free_ram" % self.client_id, str(gc.mem_free()), qos=0)
+
+                    await self.mqtt_client_metrics.publish(
+                        "telemetry/%s/alloc_ram" % self.client_id, str(gc.mem_alloc()), qos=0)
+
                     # await self.mqtt_client_metrics.publish(
                     #     "telemetry/%s/info" % self.client_id, os.uname(), qos=1)
-                    # if sys.platform != "linux":
-                    #     await self.mqtt_client_metrics.publish(
-                    #         "telemetry/%s/flash_size" % self.client_id, esp.flash_size(), qos=1)
-                    # else:
-                    #     info = os.statvfs("./")
-                    #     flash_size = info[3] * info[0]
-                    #     await self.mqtt_client_metrics.publish(
-                    #         "telemetry/%s/flash_size" % self.client_id, flash_size, qos=1)
 
-                    # print("telemetry/%s/uptime" % self.client_id)
+                    if sys.platform != "linux":
+                        self.mqtt_client_metrics.publish(
+                            "telemetry/%s/flash_size" % self.client_id, str(esp.flash_size()), qos=0)
+                    else:
+                        info = os.statvfs("./")
+                        flash_size = info[3] * info[0]
+                        self.mqtt_client_metrics.publish(
+                            "telemetry/%s/flash_size" % self.client_id, str(flash_size), qos=0)
+
                     await asyncio.sleep(5)
             except Exception as e:
                 print(e)
@@ -117,6 +117,7 @@ class Server():
                 self.mqtt_client = MQTTClient(**config)
 
             print("Starting up server...")
+            self.start_time = utime.ticks_ms()
             self.server_task = loop.create_task(self.server)
         except TypeError:
             await asyncio.sleep(0)

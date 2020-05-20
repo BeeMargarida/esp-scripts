@@ -4,7 +4,7 @@ services:
     image: micropython_docker
     build: .
     ports:
-      - 8080-8089:8080
+      - 8000-8080:8080
     command: sh -c "./micropython boot.py $$(cat /etc/hostname)"
     depends_on:
       - mosquitto
@@ -64,10 +64,10 @@ services:
     # networks:
     #   net:
     #     ipv4_address: 172.23.0.6
-networks:
-  net:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.23.0.0/24
+# networks:
+#   net:
+#     driver: bridge
+#     ipam:
+#       driver: default
+#       config:
+#         - subnet: 172.23.0.0/24
