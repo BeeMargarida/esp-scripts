@@ -54,6 +54,15 @@ points:
   - measurement: nodes
     topic: telemetry/+/nodes
     fields:
-      value: $.payload
+      nodes: $.payload.nodes
+      nr: $.payload.nr
+    tags:
+      id: $.topic[1]
+
+  - measurement: round_trip
+    topic: telemetry/+/round_trip
+    fields:
+      duration: $.payload.duration
+      state: $.payload.state
     tags:
       id: $.topic[1]
