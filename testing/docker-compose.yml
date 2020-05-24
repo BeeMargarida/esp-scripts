@@ -16,14 +16,6 @@ services:
   mosquitto:
     container_name: mosquitto
     image: eclipse-mosquitto
-    # volumes:
-      # - ./conf/mosquitto/:/mosquitto/config/
-      # - ./tig/data/mqtt/:/mosquitto/data/
-      # - ./tig/log/mqtt/:/mosquitto/log/
-    # restart: always
-    # networks:
-    #   net:
-    #     ipv4_address: 172.23.0.3
   influxdb:
     container_name: influxdb
     image: influxdb
@@ -33,9 +25,6 @@ services:
       - ./tig/data/influxdb:/var/lib/influxdb
       - ./tig/conf/influxdb:/etc/influxdb/
     restart: always
-    # networks:
-    #   net:
-    #     ipv4_address: 172.23.0.2
   grafana:
     container_name: grafana
     image: grafana/grafana
@@ -50,9 +39,6 @@ services:
     links:
       - influxdb
     restart: always
-    # networks:
-    #   net:
-    #     ipv4_address: 172.23.0.4
   bridge:
     container_name: bridge
     build: ./bridge
@@ -64,13 +50,3 @@ services:
       - influxdb
     links:
       - mosquitto
-    # networks:
-    #   net:
-    #     ipv4_address: 172.23.0.6
-# networks:
-#   net:
-#     driver: bridge
-#     ipam:
-#       driver: default
-#       config:
-#         - subnet: 172.23.0.0/24
