@@ -7,7 +7,7 @@ class DHT22():
         return 
 
     def temperature(self):
-        return 20
+        return 30
 
     def humidity(self):
-        return 20
+        return 30

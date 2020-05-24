@@ -86,8 +86,14 @@ class Server():
                     await self.mqtt_client_metrics.publish(
                         "telemetry/%s/running" % self.client_id, str(self.running_script), qos=0)
 
+                    print(self.assigned_nodes)
+
+                    assigned_nodes_dict = dict(
+                        nodes = str(self.assigned_nodes),
+                        nr = str(len(self.assigned_nodes.split(" ")))
+                    )
                     await self.mqtt_client_metrics.publish(
-                        "telemetry/%s/nodes" % self.client_id, self.assigned_nodes, qos=0)
+                        "telemetry/%s/nodes" % self.client_id, ujson.dumps(assigned_nodes_dict), qos=0)
 
                     # await self.mqtt_client_metrics.publish(
                     #     "telemetry/%s/info" % self.client_id, os.uname(), qos=1)
@@ -96,8 +102,8 @@ class Server():
                         await self.mqtt_client_metrics.publish(
                             "telemetry/%s/flash_size" % self.client_id, str(esp.flash_size()), qos=0)
                     else:
-                        info = os.statvfs("./")
-                        flash_size = info[3] * info[0]
+                        info = os.statvfs("/")
+                        flash_size = (info[4] * info[1]) / 1024
                         await self.mqtt_client_metrics.publish(
                             "telemetry/%s/flash_size" % self.client_id, str(flash_size), qos=0)
 
@@ -143,7 +149,8 @@ class Server():
 
             if self.mqtt_client.isconnected():
                 await self.mqtt_client.disconnect()
-
+            
+            await asyncio.sleep(0.2)
         except Exception as e:
             print("Script Delete Error")
 
@@ -233,6 +240,7 @@ class Server():
                 self.memory_error = True
                 return
             except Exception as e:
+                print(e)
                 print(e.args[0])
                 return
 
