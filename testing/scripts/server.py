@@ -86,8 +86,6 @@ class Server():
                     await self.mqtt_client_metrics.publish(
                         "telemetry/%s/running" % self.client_id, str(self.running_script), qos=0)
 
-                    print(self.assigned_nodes)
-
                     assigned_nodes_dict = dict(
                         nodes = str(self.assigned_nodes),
                         nr = str(len(self.assigned_nodes.split(" ")))

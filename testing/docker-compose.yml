@@ -16,6 +16,9 @@ services:
   mosquitto:
     container_name: mosquitto
     image: eclipse-mosquitto
+    volumes:
+      - ./conf/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./conf/mosquitto/data/:/var/lib/mosquitto/
   influxdb:
     container_name: influxdb
     image: influxdb
