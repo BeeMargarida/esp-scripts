@@ -15,10 +15,12 @@ else:
 if sys.platform != "linux":
     import logging
 
+from announcement import Announcer
+
 
 class Server():
 
-    def __init__(self, client_id):
+    def __init__(self, client_id, capabilities):
         print("Starting up server...")
         self.running_script = 0
         self.mqtt_client = None
@@ -30,6 +32,10 @@ class Server():
         self.last_payload = 0
         self.last_payload_id = None
         self.client_id = client_id
+        self.capabilities = capabilities
+
+        announcer = Announcer(self.client_id, self.capabilities)
+        asyncio.run(announcer.run())
 
         config['ssid'] = 'Calou oh puto do andar de cima'
         config['wifi_pw'] = 'primodowilson'
