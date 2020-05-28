@@ -1,24 +1,13 @@
 version: '2'
 services:
-  micropython:
-    image: micropython_docker
-    build: .
-    ports:
-      - 8000-8080:8080
-    command: sh -c "./micropython boot.py $$(cat /etc/hostname)"
-    depends_on:
-      - mosquitto
-      - bridge
-      - grafana
-      - influxdb
-    links:
-      - "mosquitto:mosquitto"
   mosquitto:
     container_name: mosquitto
     image: eclipse-mosquitto
     volumes:
       - ./conf/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - ./conf/mosquitto/data/:/var/lib/mosquitto/
+    depends_on:
+      - influxdb
   influxdb:
     container_name: influxdb
     image: influxdb
@@ -53,3 +42,63 @@ services:
       - influxdb
     links:
       - mosquitto
+  micropython_1:
+    image: micropython_docker
+    build: .
+    ports:
+      - 8000:8080
+    environment: 
+      CAPABILITIES: "micropython temperature humidity"
+    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $${CAPABILITIES}"
+    depends_on:
+      - mosquitto
+      - bridge
+      - grafana
+      - influxdb
+    links:
+      - "mosquitto:mosquitto"
+  micropython_2:
+    image: micropython_docker
+    build: .
+    ports:
+      - 8001:8080
+    environment: 
+      CAPABILITIES: "micropython temperature humidity"
+    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $${CAPABILITIES}"
+    depends_on:
+      - mosquitto
+      - bridge
+      - grafana
+      - influxdb
+    links:
+      - "mosquitto:mosquitto"
+  micropython_3:
+    image: micropython_docker
+    build: .
+    ports:
+      - 8002:8080
+    environment: 
+      CAPABILITIES: "micropython temperature humidity"
+    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $${CAPABILITIES}"
+    depends_on:
+      - mosquitto
+      - bridge
+      - grafana
+      - influxdb
+    links:
+      - "mosquitto:mosquitto"
+  micropython_4:
+    image: micropython_docker
+    build: .
+    ports:
+      - 8003:8080
+    environment: 
+      CAPABILITIES: "micropython"
+    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $${CAPABILITIES}"
+    depends_on:
+      - mosquitto
+      - bridge
+      - grafana
+      - influxdb
+    links:
+      - "mosquitto:mosquitto"
