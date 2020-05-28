@@ -15,10 +15,13 @@ import wifi
 from server import Server
 
 client_id = None
+capabilities = None
 print(sys.argv)
 
 if(len(sys.argv) > 1):
     client_id = sys.argv[1]
+    capabilities = sys.argv[2:]
 
 wifi.connect()
-server = Server(client_id)
+
+server = Server(client_id, capabilities)
