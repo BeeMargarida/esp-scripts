@@ -11,8 +11,7 @@ def connect():
     if not sta_if.isconnected():
         print('connecting to network...')
         sta_if.active(True)
-        sta_if.connect('Calou oh puto do andar de cima', 'primodowilson')
-        # sta_if.connect('raspberrypi', 'UJr2016#')
+        sta_if.connect('--', '--')
         while not sta_if.isconnected():
             # await asyncio.sleep(0.5)
             pass
