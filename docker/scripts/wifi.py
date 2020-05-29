@@ -9,7 +9,7 @@ def connect():
         led.on()
 
     if sys.platform == "linux":
-        return
+        return None
 
     import network
     sta_if = network.WLAN(network.STA_IF)
@@ -25,3 +25,5 @@ def connect():
     print('network config:', sta_if.ifconfig())
     if sys.platform != "linux":
         led.off()
+
+    return sta_if.ifconfig()[0]

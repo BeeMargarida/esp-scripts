@@ -16,13 +16,7 @@ RUN git submodule update --init
 
 RUN make submodules
 
-# RUN make deplibs
-
 RUN make axtls
 RUN make
 
-# RUN ./micropython -m upip install machine
-
 COPY ./scripts .
-
-# ENTRYPOINT ["./micropython"]

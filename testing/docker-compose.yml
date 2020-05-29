@@ -49,7 +49,7 @@ services:
       - 8000:8080
     environment: 
       CAPABILITIES: "micropython temperature humidity"
-    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $${CAPABILITIES}"
+    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto
       - bridge
@@ -64,7 +64,7 @@ services:
       - 8001:8080
     environment: 
       CAPABILITIES: "micropython temperature humidity"
-    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $${CAPABILITIES}"
+    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto
       - bridge
@@ -79,7 +79,7 @@ services:
       - 8002:8080
     environment: 
       CAPABILITIES: "micropython temperature humidity"
-    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $${CAPABILITIES}"
+    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto
       - bridge
@@ -94,7 +94,7 @@ services:
       - 8003:8080
     environment: 
       CAPABILITIES: "micropython"
-    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $${CAPABILITIES}"
+    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto
       - bridge

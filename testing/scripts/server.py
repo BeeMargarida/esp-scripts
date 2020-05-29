@@ -20,7 +20,7 @@ from announcement import Announcer
 
 class Server():
 
-    def __init__(self, client_id, capabilities):
+    def __init__(self, client_id, ip, capabilities):
         print("Starting up server...")
         self.running_script = 0
         self.mqtt_client = None
@@ -32,9 +32,10 @@ class Server():
         self.last_payload = 0
         self.last_payload_id = None
         self.client_id = client_id
+        self.ip = ip
         self.capabilities = capabilities
 
-        announcer = Announcer(self.client_id, self.capabilities)
+        announcer = Announcer(self.client_id, self.ip, self.capabilities, 0)
         asyncio.run(announcer.run())
 
         config['ssid'] = ''
@@ -133,6 +134,9 @@ class Server():
             else:
                 config["client_id"] = "linux"
                 self.mqtt_client = MQTTClient(**config)
+
+            announcer = Announcer(self.client_id, self.ip, self.capabilities, 1)
+            asyncio.run(announcer.run())
 
             print("Starting up server...")
             self.start_time = utime.ticks_ms()
