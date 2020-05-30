@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 services:
   mosquitto:
     container_name: mosquitto
@@ -49,6 +49,10 @@ services:
       - 8000:8080
     environment: 
       CAPABILITIES: "micropython temperature humidity"
+    deploy:
+      resources:
+        limits:
+          memory: 4M
     command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto
@@ -64,6 +68,10 @@ services:
       - 8001:8080
     environment: 
       CAPABILITIES: "micropython temperature humidity"
+    deploy:
+      resources:
+        limits:
+          memory: 4M
     command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto
@@ -79,6 +87,10 @@ services:
       - 8002:8080
     environment: 
       CAPABILITIES: "micropython temperature humidity"
+    deploy:
+      resources:
+        limits:
+          memory: 10M
     command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto
@@ -94,6 +106,10 @@ services:
       - 8003:8080
     environment: 
       CAPABILITIES: "micropython"
+    deploy:
+      resources:
+        limits:
+          memory: 10M
     command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto

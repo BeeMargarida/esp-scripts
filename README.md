@@ -7,7 +7,7 @@ Docker image that setups a micropython container that executes a boot script at 
 Download this folder or repo and in this directory run:
 
 * `docker-compose build`
-* `docker-compose up` or `docker-compose up --scale micropython=10` if you want 10 instances of the micropython instance (with `-d` if you want to run in detached mode)
+* `docker-compose --compatibility up` (with `-d` if you want to run in detached mode)
 
 These commands will run the wanted instances of microptyhon containers as well as a mosquitto broker.
 
@@ -27,11 +27,19 @@ With all that set up, we can start Node-RED and make a flow.
 
 ### Commands 
 
-To launch several instances run: 
+To stop a running container: 
 
-`docker-compose up --scale micropython=10`
+`docker stop testing_micropython_1_1`
+
+To start a running container: 
+
+`docker start testing_micropython_1_1`
 
 #### Aux commands
+
+To access a container's logs:
+
+`docker logs -t -f testing_micropython_1_1`
 
 List all docker container names and IPs:
 
