@@ -63,12 +63,23 @@ class Server():
     def run(self):
         try:
             loop = asyncio.get_event_loop()
+            loop.set_exception_handler(self.handle_exceptions)
+
             self.metrics_task = loop.create_task(self.metrics())
             self.server = asyncio.start_server(self.serve, "0.0.0.0", 80)
             self.server_task = loop.create_task(self.server)
             loop.run_forever()
         except Exception as e:
             print(e)
+
+    def handle_exceptions(self, loop, context):
+        exception = context['exception']
+        if type(exception) == type(MemoryError()):
+            print("Memory Error")
+
+            loop = asyncio.get_event_loop()
+            loop.create_task(self.failsafe())
+            return
 
     async def metrics(self):
         while True:
@@ -129,14 +140,14 @@ class Server():
                 await self.mqtt_client.disconnect()
             self.mqtt_client = None
 
+            announcer = Announcer(self.client_id, self.ip, self.capabilities, 1)
+            asyncio.run(announcer.run())
+
             if sys.platform != "linux":
                 self.mqtt_client = MQTTClient(config)
             else:
                 config["client_id"] = "linux"
                 self.mqtt_client = MQTTClient(**config)
-
-            announcer = Announcer(self.client_id, self.ip, self.capabilities, 1)
-            asyncio.run(announcer.run())
 
             print("Starting up server...")
             self.start_time = utime.ticks_ms()
@@ -272,7 +283,7 @@ class Server():
                 await writer.aclose()
 
                 loop = asyncio.get_event_loop()
-                loop.create_task(script.exec(self.mqtt_client))
+                loop.create_task(script.exec(self.mqtt_client, self.capabilities))
 
                 self.running_script = 1
 

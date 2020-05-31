@@ -50,3 +50,5 @@ class Announcer():
             payload=data
         )
         await self.mqtt_client.publish("announcements", ujson.dumps(payload), qos = 1, retain = True)
+
+        await self.mqtt_client.disconnect()
