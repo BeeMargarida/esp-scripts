@@ -49,6 +49,7 @@ class Announcer():
         payload = dict(
             payload=data
         )
-        await self.mqtt_client.publish("announcements", ujson.dumps(payload), qos = 1, retain = True)
+        print("Announcing: " + ujson.dumps(payload))
+        await self.mqtt_client.publish("announcements/" + self.ip, ujson.dumps(payload), qos = 1, retain = True)
 
         await self.mqtt_client.disconnect()
