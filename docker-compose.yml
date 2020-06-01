@@ -43,16 +43,11 @@ services:
     links:
       - mosquitto
   micropython_1:
-    image: micropython_docker
     build: .
     ports:
       - 8000:8080
     environment: 
-      CAPABILITIES: "micropython temperature humidity"
-    deploy:
-      resources:
-        limits:
-          memory: 4M
+      CAPABILITIES: "micropython temperature humidity fail"
     command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto
@@ -62,16 +57,11 @@ services:
     links:
       - "mosquitto:mosquitto"
   micropython_2:
-    image: micropython_docker
     build: .
     ports:
       - 8001:8080
     environment: 
       CAPABILITIES: "micropython temperature humidity"
-    deploy:
-      resources:
-        limits:
-          memory: 4M
     command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto
@@ -81,16 +71,11 @@ services:
     links:
       - "mosquitto:mosquitto"
   micropython_3:
-    image: micropython_docker
     build: .
     ports:
       - 8002:8080
     environment: 
       CAPABILITIES: "micropython temperature humidity"
-    deploy:
-      resources:
-        limits:
-          memory: 10M
     command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto
@@ -100,16 +85,11 @@ services:
     links:
       - "mosquitto:mosquitto"
   micropython_4:
-    image: micropython_docker
     build: .
     ports:
       - 8003:8080
     environment: 
       CAPABILITIES: "micropython"
-    deploy:
-      resources:
-        limits:
-          memory: 10M
     command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto

@@ -7,7 +7,7 @@ Docker image that setups a micropython container that executes a boot script at 
 Download this folder or repo and in this directory run:
 
 * `docker-compose build`
-* `docker-compose --compatibility up` (with `-d` if you want to run in detached mode)
+* `docker-compose up` (with `-d` if you want to run in detached mode)
 
 These commands will run the wanted instances of microptyhon containers as well as a mosquitto broker.
 
