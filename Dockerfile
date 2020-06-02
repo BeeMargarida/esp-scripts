@@ -19,4 +19,6 @@ RUN make submodules
 RUN make axtls
 RUN make
 
+RUN ./micropython -m upip install urequests
+
 COPY ./scripts .
