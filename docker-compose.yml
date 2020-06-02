@@ -17,6 +17,55 @@ services:
       - ./tig/data/influxdb:/var/lib/influxdb
       - ./tig/conf/influxdb:/etc/influxdb/
     restart: always
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./conf/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+  logstash_exporter:
+    container_name: logstash_exporter
+    image: bonniernews/logstash_exporter
+    ports:
+      - 9198:9198
+    command: --web.listen-address=:9198 --logstash.endpoint="http://logstash:9600"
+    depends_on: 
+      - logstash
+      - prometheus
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.7.0
+    environment: 
+      - discovery.type=single-node
+    volumes:
+      - ./tig/data/elasticsearch:/usr/share/elasticsearch/data/
+    ports: 
+      - "9200:9200"
+  logstash:
+    container_name: logstash
+    image: docker.elastic.co/logstash/logstash:7.7.0
+    ports:
+      - "5959:5959"
+      - "9600:9600"
+    volumes:
+      - ./conf/logstash:/config-dir
+    command: logstash -f /config-dir/logstash.conf
+    links:
+      - elasticsearch
+      - prometheus
+    depends_on:
+      - elasticsearch
+      - prometheus
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:7.7.0
+    volumes:
+      - ./conf/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
   grafana:
     container_name: grafana
     image: grafana/grafana
@@ -43,6 +92,7 @@ services:
     links:
       - mosquitto
   micropython_1:
+    container_name: micropython_1
     build: .
     ports:
       - 8000:8080
@@ -57,6 +107,7 @@ services:
     links:
       - "mosquitto:mosquitto"
   micropython_2:
+    container_name: micropython_2
     build: .
     ports:
       - 8001:8080
@@ -71,6 +122,7 @@ services:
     links:
       - "mosquitto:mosquitto"
   micropython_3:
+    container_name: micropython_3
     build: .
     ports:
       - 8002:8080
@@ -85,11 +137,12 @@ services:
     links:
       - "mosquitto:mosquitto"
   micropython_4:
+    container_name: micropython_4
     build: .
     ports:
       - 8003:8080
     environment: 
-      CAPABILITIES: "micropython"
+      CAPABILITIES: "micropython fail"
     command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto
