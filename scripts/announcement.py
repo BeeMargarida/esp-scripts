@@ -29,10 +29,11 @@ class Announcer():
         config['server'] = self.mqtt_server
         config['port'] = 1883
         if sys.platform != "linux":
+            config['client_id'] = unique_id() + "announcement"
             self.mqtt_client = MQTTClient(config)
         else:
-            MQTTClient.DEBUG = True
-            config['client_id'] = ubinascii.hexlify(client_id)
+            # MQTTClient.DEBUG = True
+            config['client_id'] = ubinascii.hexlify(str(client_id) + "announcement")
             self.mqtt_client = MQTTClient(**config)
 
         if sys.platform != "linux":

@@ -51,7 +51,7 @@ class Server():
             config['client_id'] = ubinascii.hexlify(client_id)
             self.mqtt_client = MQTTClient(**config)
 
-            MQTTClient.DEBUG = True
+            # MQTTClient.DEBUG = True
             config['client_id'] = ubinascii.hexlify(str(client_id) + "metrics")
             self.mqtt_client_metrics = MQTTClient(**config)
 
@@ -76,6 +76,8 @@ class Server():
         exception = context['exception']
         if type(exception) == type(MemoryError()):
             print("Memory Error")
+
+            self.memory_error = True
 
             loop = asyncio.get_event_loop()
             loop.create_task(self.failsafe())
@@ -140,19 +142,23 @@ class Server():
                 await self.mqtt_client.disconnect()
             self.mqtt_client = None
 
-            announcer = Announcer(self.client_id, self.ip, self.capabilities, 1)
-            asyncio.run(announcer.run())
-
             if sys.platform != "linux":
                 self.mqtt_client = MQTTClient(config)
             else:
                 config["client_id"] = "linux"
                 self.mqtt_client = MQTTClient(**config)
 
+            announcer = Announcer(self.client_id, self.ip, self.capabilities, 1)
+            await announcer.run()
+
+            self.memory_error = False
+
             print("Starting up server...")
             self.start_time = utime.ticks_ms()
             self.server_task = loop.create_task(self.server)
-        except TypeError:
+        except TypeError as e:
+            print("FAILSAFE EXCEPTION")
+            print(e)
             await asyncio.sleep(0)
             loop.create_task(self.failsafe())
 
@@ -161,22 +167,26 @@ class Server():
             # delete previous script
             import script
 
-            script.stop()
-            self.running_script = 0
+            if hasattr(script, "stop"): script.stop()
             del sys.modules['script']
-            os.remove("script.py")
-
-            if self.mqtt_client.isconnected():
-                await self.mqtt_client.disconnect()
-            
-            await asyncio.sleep(0.2)
+        except Exception as e:
+            print("Script Removing Error")
+            print(e)
+        
+        try:
+            os.remove("./script.py")
         except Exception as e:
             print("Script Delete Error")
+            print(e)
+
+        if self.mqtt_client.isconnected():
+            await self.mqtt_client.disconnect()
+        
+        await asyncio.sleep(0.2)
+        return
 
     async def serve(self, reader, writer):
         if(self.memory_error):
-            loop = asyncio.get_event_loop()
-            loop.create_task(self.failsafe())
             return
 
         try:
@@ -202,7 +212,6 @@ class Server():
         request_info = req.find('POST /execute')
         if request_info == -1:
             await writer.awrite("HTTP/1.1 404\r\nContent-Type: text/plain\r\nContent-Length: 9\r\n\r\nNot found")
-            await asyncio.sleep(1)
             await writer.aclose()
             return
 
@@ -257,8 +266,11 @@ class Server():
                 await writer.aclose()
 
                 self.memory_error = True
+                loop = asyncio.get_event_loop()
+                loop.create_task(self.failsafe())
                 return
             except Exception as e:
+                print("Write exception")
                 print(e)
                 print(e.args[0])
                 return
@@ -301,6 +313,7 @@ class Server():
                 await writer.aclose()
                 return
             except Exception as e:
+                print("EXCEPTION")
                 print(e)
                 del sys.modules['script']
                 os.remove("script.py")
