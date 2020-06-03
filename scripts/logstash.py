@@ -1,12 +1,13 @@
-import urequests
+import usocket as socket
+import ujson
 
-def log_to_logstash(data):
+async def log_to_logstash(data):
     print('Sending data to Logstash. Data:', data)
     try:
-        response = urequests.post(
-            "http://logstash:9600",
-            json=data
-        )
-        print(response.status_code, response.reason, response.text)
+        addr = socket.getaddrinfo("logstash", 5959)[0][-1]
+        s = socket.socket()
+        s.connect(addr)
+        s.send(ujson.dumps(data))
+        s.close()
     except OSError as e:
         print('Error sending data to Logstash:', e)

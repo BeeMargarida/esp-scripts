@@ -1,3 +1,5 @@
+from announcement import Announcer
+from logstash import log_to_logstash
 import uasyncio as asyncio
 import os
 import gc
@@ -14,8 +16,6 @@ else:
     from config import config
 if sys.platform != "linux":
     import logging
-
-from announcement import Announcer
 
 
 class Server():
@@ -68,6 +68,10 @@ class Server():
             self.metrics_task = loop.create_task(self.metrics())
             self.server = asyncio.start_server(self.serve, "0.0.0.0", 80)
             self.server_task = loop.create_task(self.server)
+            loop.create_task(log_to_logstash({
+                "@tags": ["micropython"],
+                "@message": { "message": "Started server" }
+            }))
             loop.run_forever()
         except Exception as e:
             print(e)
@@ -107,8 +111,8 @@ class Server():
                         "telemetry/%s/running" % self.client_id, str(self.running_script), qos=0)
 
                     assigned_nodes_dict = dict(
-                        nodes = str(self.assigned_nodes),
-                        nr = str(len(self.assigned_nodes.split(" ")))
+                        nodes=str(self.assigned_nodes),
+                        nr=str(len(self.assigned_nodes.split(" ")))
                     )
                     await self.mqtt_client_metrics.publish(
                         "telemetry/%s/nodes" % self.client_id, ujson.dumps(assigned_nodes_dict), qos=0)
@@ -134,6 +138,10 @@ class Server():
         print("Starting failsafe")
         loop = asyncio.get_event_loop()
         try:
+            loop.create_task(log_to_logstash({
+                "@tags": ["micropython"],
+                "@message": { "message": "Starting failsafe" }
+            }))
             # cancel server task
             self.server.close()
             self.server_task.cancel()
@@ -148,7 +156,8 @@ class Server():
                 config["client_id"] = "linux"
                 self.mqtt_client = MQTTClient(**config)
 
-            announcer = Announcer(self.client_id, self.ip, self.capabilities, 1)
+            announcer = Announcer(self.client_id, self.ip,
+                                  self.capabilities, 1)
             await announcer.run()
 
             self.memory_error = False
@@ -167,12 +176,13 @@ class Server():
             # delete previous script
             import script
 
-            if hasattr(script, "stop"): script.stop()
+            if hasattr(script, "stop"):
+                script.stop()
             del sys.modules['script']
         except Exception as e:
             print("Script Removing Error")
             print(e)
-        
+
         try:
             os.remove("./script.py")
         except Exception as e:
@@ -181,7 +191,7 @@ class Server():
 
         if self.mqtt_client.isconnected():
             await self.mqtt_client.disconnect()
-        
+
         await asyncio.sleep(0.2)
         return
 
@@ -290,12 +300,18 @@ class Server():
 
                 print("MQTT Client Connected")
 
+                loop = asyncio.get_event_loop()
+                loop.create_task(log_to_logstash({
+                    "@tags": ["micropython"],
+                    "@message": { "message": "Script written and MQTT connected" }
+                }))
+
                 # send HTTP response
                 await writer.awrite("HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\nFile saved.\r\n")
                 await writer.aclose()
 
-                loop = asyncio.get_event_loop()
-                loop.create_task(script.exec(self.mqtt_client, self.capabilities))
+                loop.create_task(script.exec(
+                    self.mqtt_client, self.capabilities))
 
                 self.running_script = 1
 
