@@ -20,7 +20,7 @@ if sys.platform != "linux":
 
 class Server():
 
-    def __init__(self, client_id, ip, capabilities, max_write_length):
+    def __init__(self, client_id, ip, capabilities):
         print("Starting up server...")
         self.running_script = 0
         self.mqtt_client = None
@@ -34,7 +34,6 @@ class Server():
         self.client_id = client_id
         self.ip = ip
         self.capabilities = capabilities
-        self.max_write_length = max_write_length
 
         announcer = Announcer(self.client_id, self.ip, self.capabilities, 0)
         asyncio.run(announcer.run())
@@ -250,8 +249,6 @@ class Server():
                 # delete previous script
                 await self.delete_script()
 
-                print("Length: " + str(l))
-
                 if sys.platform != "linux":
                     # save script in .py file
                     f = open("script.py", "w")
@@ -265,9 +262,6 @@ class Server():
                     f = open("script.py", "w")
                     read_l = 0
                     postquery = b''
-                    
-                    if(l > self.max_write_length): raise MemoryError("Memory Error")
-
                     while read_l < l:
                         tmp = await reader.read(l)
                         read_l += len(tmp)
@@ -276,7 +270,7 @@ class Server():
                     f.close()
 
             except MemoryError as e:
-                print("Memory Error on write")
+                print("Memory Error")
                 f.close()
                 await writer.awrite("HTTP/1.1 413\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
                 await writer.aclose()
@@ -330,7 +324,6 @@ class Server():
                 loop.create_task(self.failsafe())
                 return
             except OSError as e:
-                print("OSERROR: " + str(e))
                 # Exception raised when MQTT Broker address is wrong
                 await writer.awrite("HTTP/1.1 424\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
                 await writer.aclose()

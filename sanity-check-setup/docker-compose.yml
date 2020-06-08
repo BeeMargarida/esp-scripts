@@ -107,8 +107,7 @@ services:
       - 8000:8080
     environment: 
       CAPABILITIES: "micropython temperature humidity fail device1"
-      MAX_WRITE_LENGTH: 12000
-    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES} $${MAX_WRITE_LENGTH}"
+    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto
       - bridge
@@ -125,8 +124,7 @@ services:
       - 8001:8080
     environment: 
       CAPABILITIES: "micropython temperature humidity device2"
-      MAX_WRITE_LENGTH: 30000
-    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES} $${MAX_WRITE_LENGTH}"
+    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto
       - bridge
@@ -143,8 +141,7 @@ services:
       - 8002:8080
     environment: 
       CAPABILITIES: "micropython temperature humidity device3"
-      MAX_WRITE_LENGTH: 50000
-    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES} $${MAX_WRITE_LENGTH}"
+    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto
       - bridge
@@ -161,8 +158,7 @@ services:
       - 8003:8080
     environment: 
       CAPABILITIES: "micropython device4"
-      MAX_WRITE_LENGTH: 8000
-    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES} $${MAX_WRITE_LENGTH}"
+    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto
       - bridge
