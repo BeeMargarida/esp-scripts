@@ -15,11 +15,11 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 1,
   "links": [],
   "panels": [
     {
-      "datasource": "telemetry",
+      "datasource": "InfluxDB",
       "fieldConfig": {
         "defaults": {
           "custom": {},
@@ -103,7 +103,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "telemetry",
+      "datasource": "InfluxDB",
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -219,7 +219,7 @@
       }
     },
     {
-      "datasource": "telemetry",
+      "datasource": "InfluxDB",
       "fieldConfig": {
         "defaults": {
           "custom": {},
@@ -429,7 +429,7 @@
       }
     },
     {
-      "datasource": null,
+      "datasource": "InfluxDB",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -536,7 +536,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "telemetry",
+      "datasource": "InfluxDB",
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -660,7 +660,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "telemetry",
+      "datasource": "InfluxDB",
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -786,7 +786,7 @@
       }
     },
     {
-      "datasource": null,
+      "datasource": "InfluxDB",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -866,7 +866,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "telemetry",
+      "datasource": "InfluxDB",
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -1019,5 +1019,5 @@
   "timezone": "",
   "title": "Telemetry",
   "uid": "D_DbeuRMk",
-  "version": 13
+  "version": 2
 }
