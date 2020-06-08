@@ -70,7 +70,7 @@ class Server():
             self.server_task = loop.create_task(self.server)
             loop.create_task(log_to_logstash({
                 "@tags": ["micropython"],
-                "@message": { "message": "Started server" }
+                "@message": {"message": "Started server"}
             }))
             loop.run_forever()
         except Exception as e:
@@ -84,7 +84,7 @@ class Server():
             self.memory_error = True
 
             loop = asyncio.get_event_loop()
-            loop.create_task(self.failsafe())
+            loop.create_task(self.failsafe(True))
             return
 
     async def metrics(self):
@@ -134,14 +134,18 @@ class Server():
                 print(e)
         return
 
-    async def failsafe(self):
+    async def failsafe(self, announce):
         print("Starting failsafe")
         loop = asyncio.get_event_loop()
         try:
             loop.create_task(log_to_logstash({
                 "@tags": ["micropython"],
-                "@message": { "message": "Starting failsafe" }
+                "@message": {"message": "Starting failsafe"}
             }))
+            # cancel script task
+            if self.script_task:
+                self.script_task.cancel()
+
             # cancel server task
             self.server.close()
             self.server_task.cancel()
@@ -156,20 +160,21 @@ class Server():
                 config["client_id"] = "linux"
                 self.mqtt_client = MQTTClient(**config)
 
-            announcer = Announcer(self.client_id, self.ip,
-                                  self.capabilities, 1)
-            await announcer.run()
-
             self.memory_error = False
 
             print("Starting up server...")
             self.start_time = utime.ticks_ms()
             self.server_task = loop.create_task(self.server)
+
+            if announce:
+                announcer = Announcer(self.client_id, self.ip,
+                                      self.capabilities, 1)
+                await announcer.run()
         except TypeError as e:
             print("FAILSAFE EXCEPTION")
             print(e)
             await asyncio.sleep(0)
-            loop.create_task(self.failsafe())
+            loop.create_task(self.failsafe(True))
 
     async def delete_script(self):
         try:
@@ -249,9 +254,6 @@ class Server():
                 # delete previous script
                 await self.delete_script()
 
-                if "error-on-write" in self.capabilities:
-                    raise MemoryError()
-
                 if sys.platform != "linux":
                     # save script in .py file
                     f = open("script.py", "w")
@@ -273,14 +275,14 @@ class Server():
                     f.close()
 
             except MemoryError as e:
-                print("Memory Error")
+                print("Memory Error on write")
                 f.close()
-                await writer.awrite("HTTP/1.1 413\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
+                await writer.awrite("HTTP/1.1 413 Request Entity Too Large\r\nContent-Type: text/plain\r\n\r\n" + str(e) + "\r\n")
                 await writer.aclose()
 
                 self.memory_error = True
                 loop = asyncio.get_event_loop()
-                loop.create_task(self.failsafe())
+                loop.create_task(self.failsafe(False))
                 return
             except Exception as e:
                 print("Write exception")
@@ -306,27 +308,28 @@ class Server():
                 loop = asyncio.get_event_loop()
                 loop.create_task(log_to_logstash({
                     "@tags": ["micropython"],
-                    "@message": { "message": "Script written and MQTT connected" }
+                    "@message": {"message": "Script written and MQTT connected"}
                 }))
 
                 # send HTTP response
                 await writer.awrite("HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\nFile saved.\r\n")
                 await writer.aclose()
 
-                loop.create_task(script.exec(
+                self.script_task = loop.create_task(script.exec(
                     self.mqtt_client, self.capabilities))
 
                 self.running_script = 1
 
             except MemoryError as e:
                 print("Memory Error")
-                await writer.awrite("HTTP/1.1 413\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
+                await writer.awrite("HTTP/1.1 413 Request Entity Too Large\r\nContent-Type: text/plain\r\n\r\n" + str(e) + "\r\n")
                 await writer.aclose()
 
                 loop = asyncio.get_event_loop()
-                loop.create_task(self.failsafe())
+                loop.create_task(self.failsafe(False))
                 return
             except OSError as e:
+                print("OSERROR: " + str(e))
                 # Exception raised when MQTT Broker address is wrong
                 await writer.awrite("HTTP/1.1 424\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
                 await writer.aclose()
