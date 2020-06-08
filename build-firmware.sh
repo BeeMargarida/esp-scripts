@@ -13,11 +13,11 @@ rm -rf ./build-GENERIC
 
 cp -R ~/Documents/esp-scripts/scripts/* ./modules/
 
-rm -rf ~/Documents/micropython/ports/esp8266/modules/server.py
+rm -rf ./modules/boot.py
 
 for i in {0..20..1}
     do
-        cp ~/Documents/esp-scripts/firmware-scripts/$i/server.py
+        cp ~/Documents/esp-scripts/firmware-scripts/$i/boot.py ./modules/boot.py 
         make 
         cp ./build-GENERIC/firmware-combined.bin ~/Documents/esp-scripts/firmware/firmware-$i.bin
     done

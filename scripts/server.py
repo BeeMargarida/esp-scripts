@@ -35,6 +35,9 @@ class Server():
         self.ip = ip
         self.capabilities = capabilities
 
+        if sys.platform != "linux":
+            self.client_id = unique_id()
+
         announcer = Announcer(self.client_id, self.ip, self.capabilities, 0)
         asyncio.run(announcer.run())
 
@@ -45,7 +48,7 @@ class Server():
         if sys.platform != "linux":
             self.mqtt_client = MQTTClient(config)
 
-            config['client_id'] = unique_id() + "metrics"
+            config['client_id'] = self.client_id + "metrics"
             self.mqtt_client_metrics = MQTTClient(config)
         else:
             config['client_id'] = ubinascii.hexlify(client_id)
