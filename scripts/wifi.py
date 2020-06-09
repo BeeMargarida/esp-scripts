@@ -1,12 +1,12 @@
 import sys
 import uasyncio as asyncio
-if sys.platform != "linux":
-    from machine import Pin
+# if sys.platform != "linux":
+#     from machine import Pin
 
 def connect():
-    if sys.platform != "linux":
-        led = Pin(2, Pin.OUT)
-        led.on()
+    # if sys.platform != "linux":
+        # led = Pin(2, Pin.OUT)
+        # led.on()
 
     if sys.platform == "linux":
         return
@@ -23,5 +23,6 @@ def connect():
             pass
 
     print('network config:', sta_if.ifconfig())
-    if sys.platform != "linux":
-        led.off()
+    # if sys.platform != "linux":
+        # led.off()
+    return sta_if.ifconfig()[0]

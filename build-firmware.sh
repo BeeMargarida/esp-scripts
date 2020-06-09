@@ -4,8 +4,8 @@ mkdir ./firmware
 
 cd ~/Documents/micropython
 
-make -C ports/esp8266 submodules
-make -C mpy-cross
+# make -C ports/esp8266 submodules
+# make -C mpy-cross
 
 cd ./ports/esp8266
 
@@ -15,7 +15,7 @@ cp -R ~/Documents/esp-scripts/scripts/* ./modules/
 
 rm -rf ./modules/boot.py
 
-for i in {0..20..1}
+for i in {1..20..1}
     do
         cp ~/Documents/esp-scripts/firmware-scripts/$i/boot.py ./modules/boot.py 
         make 
