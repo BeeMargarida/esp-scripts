@@ -39,11 +39,14 @@ class Server():
         config['server'] = self.mqtt_server
         config['port'] = 1883
 
+        MQTTClient.DEBUG = True
+
+        config['client_id'] = ubinascii.hexlify(unique_id())
         self.mqtt_client = MQTTClient(config)
 
-        config['client_id'] = ubinascii.hexlify("metrics")
+        config['client_id'] = ubinascii.hexlify(str(unique_id()) + "metrics")
         self.mqtt_client_metrics = MQTTClient(config)
-    
+
         logging.basicConfig(level=logging.INFO)
 
         self.run()
@@ -142,7 +145,7 @@ class Server():
                 await self.mqtt_client.disconnect()
             self.mqtt_client = None
 
-            config['client_id'] = unique_id()
+            config['client_id'] = ubinascii.hexlify(unique_id())
             self.mqtt_client = MQTTClient(config)
 
             self.memory_error = False

@@ -28,9 +28,7 @@ class Announcer():
         config['wifi_pw'] = '-'
         config['server'] = self.mqtt_server
         config['port'] = 1883
-        config['client_id'] = ubinascii.hexlify("announcements") # unique_id() + b'\x00'
-        print(config['client_id'])
-        print(self.ip)
+        config['client_id'] = ubinascii.hexlify(str(unique_id()) + "announcements")
 
         self.mqtt_client = MQTTClient(config)
         logging.basicConfig(level=logging.INFO)
