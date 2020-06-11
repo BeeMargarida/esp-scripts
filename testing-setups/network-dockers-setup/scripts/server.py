@@ -200,15 +200,6 @@ class Server():
         await asyncio.sleep(0.2)
         return
 
-    async def raise_memory_error(self):
-        import urandom
-
-        div = 0x3fffffff // 5
-        random_nr = 2 + urandom.getrandbits(30) // div
-
-        await asyncio.sleep(random_nr)
-        raise MemoryError()
-
     async def serve(self, reader, writer):
         if(self.memory_error):
             return
@@ -284,7 +275,7 @@ class Server():
                     f.close()
 
             except MemoryError as e:
-                print("Memory Error")
+                print("Memory Error on write")
                 f.close()
                 await writer.awrite("HTTP/1.1 413 Request Entity Too Large\r\nContent-Type: text/plain\r\n\r\n" + str(e) + "\r\n")
                 await writer.aclose()
@@ -324,9 +315,6 @@ class Server():
                 await writer.awrite("HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\nFile saved.\r\n")
                 await writer.aclose()
 
-                if "fail" in self.capabilities:
-                    loop.create_task(self.raise_memory_error())
-
                 self.script_task = loop.create_task(script.exec(
                     self.mqtt_client, self.capabilities))
 
@@ -341,6 +329,7 @@ class Server():
                 loop.create_task(self.failsafe(False))
                 return
             except OSError as e:
+                print("OSERROR: " + str(e))
                 # Exception raised when MQTT Broker address is wrong
                 await writer.awrite("HTTP/1.1 424\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
                 await writer.aclose()

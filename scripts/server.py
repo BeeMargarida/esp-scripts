@@ -34,8 +34,8 @@ class Server():
         announcer = Announcer(self.client_id, self.ip, self.capabilities, 0)
         asyncio.run(announcer.run())
 
-        config['ssid'] = ''
-        config['wifi_pw'] = ''
+        config['ssid'] = '-'
+        config['wifi_pw'] = '-'
         config['server'] = self.mqtt_server
         config['port'] = 1883
 
@@ -101,9 +101,12 @@ class Server():
                     await self.mqtt_client_metrics.publish(
                         "telemetry/%s/running" % self.ip, str(self.running_script), qos=0)
 
+                    nr_nodes = len(self.assigned_nodes.split(" "))
+                    if self.assigned_nodes == "":
+                        nr_nodes = 0
                     assigned_nodes_dict = dict(
                         nodes=str(self.assigned_nodes),
-                        nr=str(len(self.assigned_nodes.split(" ")))
+                        nr=str(nr_nodes)
                     )
                     await self.mqtt_client_metrics.publish(
                         "telemetry/%s/nodes" % self.ip, ujson.dumps(assigned_nodes_dict), qos=0)
@@ -149,6 +152,7 @@ class Server():
             self.mqtt_client = MQTTClient(config)
 
             self.memory_error = False
+            self.assigned_nodes = ""
 
             print("Starting up server...")
             self.start_time = utime.ticks_ms()

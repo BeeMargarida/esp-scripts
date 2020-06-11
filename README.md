@@ -66,3 +66,7 @@ Prune:
 Enter container bash:
 
 `docker exec -it docker-micropython_micropython_1 bash`
+
+
+`mosquitto_pub -h - -p 1883 -t 't1' -m $(date +%s%3N)`
+`mosquitto_sub -h - -p 1883 -t 't1' -v -F "%p %U"`
