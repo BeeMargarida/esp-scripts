@@ -69,4 +69,5 @@ Enter container bash:
 
 
 `mosquitto_pub -h - -p 1883 -t 't1' -m $(date +%s%3N)`
-`mosquitto_sub -h - -p 1883 -t 't1' -v -F "%p %U"`
+`mosquitto_sub -h - -p 1883 -t 't1' -v -F "%t %p %U"`
+`mosquitto_sub -h - -p 1883 -t "#" -v -F "%t %p %U" >> subs.txt`

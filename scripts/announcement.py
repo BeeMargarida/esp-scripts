@@ -18,14 +18,14 @@ class Announcer():
     def __init__(self, client_id, ip, capabilities, failure):
         print("Starting up announcer...")
         self.mqtt_client = None
-        self.mqtt_server = '192.168.1.227'  # '10.250.7.209'
+        self.mqtt_server = '192.168.1.199'  # '10.250.7.209'
         self.client_id = client_id
         self.ip = ip
         self.capabilities = capabilities
         self.failure = failure
 
-        config['ssid'] = '-'
-        config['wifi_pw'] = '-'
+        config['ssid'] = ''
+        config['wifi_pw'] = ''
         config['server'] = self.mqtt_server
         config['port'] = 1883
         config['client_id'] = ubinascii.hexlify(str(unique_id()) + "announcements")
