@@ -20,7 +20,7 @@ class Server():
         self.running_script = 0
         self.mqtt_client = None
         self.mqtt_client_metrics = None
-        self.mqtt_server = '192.168.1.227'  # '10.250.7.209'
+        self.mqtt_server = '192.168.1.199'  # '10.250.7.209'
         self.memory_error = False
         self.assigned_nodes = ""
         self.start_time = utime.ticks_ms()
@@ -60,7 +60,7 @@ class Server():
             self.server = asyncio.start_server(self.serve, "0.0.0.0", 80)
             self.server_task = loop.create_task(self.server)
             loop.create_task(log_to_logstash({
-                "@tags": ["micropython", self.capabilities[0]],
+                "@tags": ["micropython"] + self.capabilities,
                 "@message": {"message": "Started server"}
             }))
             loop.run_forever()
@@ -111,13 +111,6 @@ class Server():
                     await self.mqtt_client_metrics.publish(
                         "telemetry/%s/nodes" % self.ip, ujson.dumps(assigned_nodes_dict), qos=0)
 
-                    # await self.mqtt_client_metrics.publish(
-                    #     "telemetry/%s/info" % self.client_id, os.uname(), qos=1)
-
-                    # if sys.platform != "linux":
-                    #     await self.mqtt_client_metrics.publish(
-                    #         "telemetry/%s/flash_size" % self.ip, str(esp.flash_size()), qos=0)
-                    # else:
                     info = os.statvfs("/")
                     flash_size = (info[4] * info[1]) / 1024
                     await self.mqtt_client_metrics.publish(
@@ -133,7 +126,7 @@ class Server():
         loop = asyncio.get_event_loop()
         try:
             loop.create_task(log_to_logstash({
-                "@tags": ["micropython", self.capabilities[0]],
+                "@tags": ["micropython"] + self.capabilities,
                 "@message": {"message": "Starting failsafe"}
             }))
             # cancel script task
@@ -157,6 +150,8 @@ class Server():
             print("Starting up server...")
             self.start_time = utime.ticks_ms()
             self.server_task = loop.create_task(self.server)
+
+            gc.collect()
 
             if announce:
                 announcer = Announcer(self.client_id, self.ip,
@@ -189,6 +184,7 @@ class Server():
         if self.mqtt_client.isconnected():
             await self.mqtt_client.disconnect()
 
+        gc.collect()
         await asyncio.sleep(0.2)
         return
 
@@ -241,14 +237,18 @@ class Server():
                 # delete previous script
                 await self.delete_script()
 
+                gc.collect()
+                print(gc.mem_free())
+
                 if sys.platform != "linux":
                     # save script in .py file
                     f = open("script.py", "w")
                     read_l = 0
                     while read_l < l:
-                        tmp = await reader.read(l)
+                        tmp = await reader.read(1000)
                         read_l += len(tmp)
                         f.write(tmp)
+                        gc.collect()
                     f.close()
                 else:
                     f = open("script.py", "w")
@@ -263,6 +263,7 @@ class Server():
 
             except MemoryError as e:
                 print("Memory Error on write")
+                print(e)
                 f.close()
                 await writer.awrite("HTTP/1.1 413 Request Entity Too Large\r\nContent-Type: text/plain\r\n\r\n" + str(e) + "\r\n")
                 await writer.aclose()
@@ -278,6 +279,7 @@ class Server():
                 return
 
             try:
+                gc.collect()
                 print("File written!")
 
                 # call and execute script
@@ -294,7 +296,7 @@ class Server():
 
                 loop = asyncio.get_event_loop()
                 loop.create_task(log_to_logstash({
-                    "@tags": ["micropython", self.capabilities[0]],
+                    "@tags": ["micropython",] + self.capabilities,
                     "@message": {"message": "Script written and MQTT connected"}
                 }))
 
@@ -303,7 +305,7 @@ class Server():
                 await writer.aclose()
 
                 self.script_task = loop.create_task(script.exec(
-                    self.mqtt_client, self.capabilities))
+                    self.mqtt_client, self.capabilities, self.client_id))
 
                 self.running_script = 1
 

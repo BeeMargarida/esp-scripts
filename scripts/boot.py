@@ -16,7 +16,13 @@ from server import Server
 
 client_id = None
 ip = None
-capabilities = ['temperature', 'humidity', 'micropython']
+capabilities = []
+print(sys.argv)
+
+if(len(sys.argv) > 1):
+    client_id = sys.argv[1]
+    ip = sys.argv[2]
+    capabilities = sys.argv[3:]
 
 addr = wifi.connect()
 if(addr): ip = addr
