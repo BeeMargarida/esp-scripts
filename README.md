@@ -67,7 +67,11 @@ Enter container bash:
 
 `docker exec -it docker-micropython_micropython_1 bash`
 
-
+Misc:
 `mosquitto_pub -h - -p 1883 -t 't1' -m $(date +%s%3N)`
+
 `mosquitto_sub -h - -p 1883 -t 't1' -v -F "%t %p %U"`
+
 `mosquitto_sub -h - -p 1883 -t "#" -v -F "%t %p %U" >> subs.txt`
+
+`docker-compose up --scale micropython=10`

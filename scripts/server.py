@@ -7,6 +7,7 @@ import sys
 import ujson
 import ubinascii
 import utime
+import urandom
 if sys.platform != "linux":
     import esp
     from machine import unique_id
@@ -34,6 +35,8 @@ class Server():
         self.client_id = client_id
         self.ip = ip
         self.capabilities = capabilities
+
+        self.failure_time = None
 
         announcer = Announcer(self.client_id, self.ip, self.capabilities, 0)
         asyncio.run(announcer.run())
@@ -64,6 +67,8 @@ class Server():
         try:
             loop = asyncio.get_event_loop()
             loop.set_exception_handler(self.handle_exceptions)
+
+            loop.create_task(self.random_failures())
             
             self.script_task = None
             self.metrics_task = loop.create_task(self.metrics())
@@ -76,6 +81,32 @@ class Server():
             loop.run_forever()
         except Exception as e:
             print(e)
+
+    async def random_failures(self):
+        loop = asyncio.get_event_loop()
+        await asyncio.sleep(1)
+
+        if self.memory_error: 
+            loop.create_task(self.random_failures())
+            return
+        
+        div = 0x3fffffff // 100
+        error_probability = 0 + urandom.getrandbits(30) // div
+
+        div = 0x3fffffff // 100
+        will_fail = 0 + urandom.getrandbits(30) // div
+
+        if will_fail < error_probability:
+            div = 0x3fffffff // 10
+            will_fail = 1 + urandom.getrandbits(30) // div
+            self.failure_time = 0
+        
+        self.memory_error = True
+        
+        loop.create_task(self.failsafe(True))
+        loop.create_task(self.random_failures())
+        return
+
 
     def handle_exceptions(self, loop, context):
         exception = context['exception']
@@ -163,6 +194,9 @@ class Server():
             else:
                 config['client_id'] = ubinascii.hexlify(self.client_id)
                 self.mqtt_client = MQTTClient(**config)
+
+            if self.failure_time:
+                await asyncio.sleep(self.failure_time)
 
             self.memory_error = False
 
