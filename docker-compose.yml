@@ -81,9 +81,6 @@ services:
       - "3000:3000"
     volumes:
       - ./grafana-data:/var/lib/grafana:Z
-      # - /tig/data/grafana:/var/lib/grafana
-      # - /tig/log/grafana:/var/log/grafana
-      # - ./grafana-data/grafana.ini:/etc/grafana/grafana.ini
     links:
       - influxdb
     restart: always
@@ -100,13 +97,12 @@ services:
     links:
       - mosquitto
 
-  micropython_1:
-    container_name: micropython_1
+  micropython:
     build: .
     ports:
       - 8000:8080
     environment: 
-      CAPABILITIES: "micropython temperature humidity fail device1"
+      CAPABILITIES: "micropython temperature humidity"
     command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
     depends_on:
       - mosquitto
@@ -114,56 +110,5 @@ services:
       - grafana
       - influxdb
       - logstash_exporter
-    links:
-      - "mosquitto:mosquitto"
-
-  micropython_2:
-    container_name: micropython_2
-    build: .
-    ports:
-      - 8001:8080
-    environment: 
-      CAPABILITIES: "micropython temperature humidity device2"
-    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
-    depends_on:
-      - mosquitto
-      - bridge
-      - grafana
-      - influxdb
-      - logstash_exporter
-    links:
-      - "mosquitto:mosquitto"
-
-  micropython_3:
-    container_name: micropython_3
-    build: .
-    ports:
-      - 8002:8080
-    environment: 
-      CAPABILITIES: "micropython temperature humidity device3"
-    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
-    depends_on:
-      - mosquitto
-      - bridge
-      - grafana
-      - influxdb
-      - logstash_exporter
-    links:
-      - "mosquitto:mosquitto"
-
-  micropython_4:
-    container_name: micropython_4
-    build: .
-    ports:
-      - 8003:8080
-    environment: 
-      CAPABILITIES: "micropython device4"
-    command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
-    depends_on:
-      - mosquitto
-      - bridge
-      - grafana
-      - influxdb
-      - logstash_exporter 
     links:
       - "mosquitto:mosquitto"

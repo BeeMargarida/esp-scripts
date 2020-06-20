@@ -65,7 +65,8 @@ class Server():
         try:
             loop = asyncio.get_event_loop()
             loop.set_exception_handler(self.handle_exceptions)
-
+            
+            self.script_task = None
             self.metrics_task = loop.create_task(self.metrics())
             self.server = asyncio.start_server(self.serve, "0.0.0.0", 80)
             self.server_task = loop.create_task(self.server)
@@ -111,12 +112,15 @@ class Server():
                     await self.mqtt_client_metrics.publish(
                         "telemetry/%s/running" % self.client_id, str(self.running_script), qos=0)
 
+                    nr_nodes = len(self.assigned_nodes.split(" "))
+                    if self.assigned_nodes == "":
+                        nr_nodes = 0
                     assigned_nodes_dict = dict(
                         nodes=str(self.assigned_nodes),
-                        nr=str(len(self.assigned_nodes.split(" ")))
+                        nr=str(nr_nodes)
                     )
                     await self.mqtt_client_metrics.publish(
-                        "telemetry/%s/nodes" % self.client_id, ujson.dumps(assigned_nodes_dict), qos=0)
+                        "telemetry/%s/nodes" % self.ip, ujson.dumps(assigned_nodes_dict), qos=0)
 
                     # await self.mqtt_client_metrics.publish(
                     #     "telemetry/%s/info" % self.client_id, os.uname(), qos=1)
@@ -143,13 +147,18 @@ class Server():
                 "@tags": ["micropython"],
                 "@message": {"message": "Starting failsafe"}
             }))
+
+            print(self.script_task)
             # cancel script task
             if self.script_task:
                 self.script_task.cancel()
+                self.script_task = None
 
             # cancel server task
             self.server.close()
             self.server_task.cancel()
+
+            print("Disconnecting MQTT client")
 
             if self.mqtt_client.isconnected():
                 await self.mqtt_client.disconnect()
@@ -158,7 +167,7 @@ class Server():
             if sys.platform != "linux":
                 self.mqtt_client = MQTTClient(config)
             else:
-                config["client_id"] = "linux"
+                config['client_id'] = ubinascii.hexlify(self.client_id)
                 self.mqtt_client = MQTTClient(**config)
 
             self.memory_error = False
@@ -216,12 +225,8 @@ class Server():
         request_info = req.find('GET /ping')
         if request_info != -1:
             print("GET /ping")
-            data = {}
-            data["status"] = 1
-            data["running"] = self.running_script
-            data_str = ujson.dumps(data)
-            data_len = len(bytes(data_str, "utf-8"))
-            await writer.awrite("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length:" + str(data_len) + "\r\n\r\n" + data_str)
+            req = await reader.read(256)
+            await writer.awrite("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nOk.\r\n")
             await writer.aclose()
             return
 
@@ -300,6 +305,8 @@ class Server():
             try:
                 print("File written!")
 
+                gc.collect()
+
                 # call and execute script
                 import script
 
@@ -323,7 +330,7 @@ class Server():
                 await writer.aclose()
 
                 self.script_task = loop.create_task(script.exec(
-                    self.mqtt_client, self.capabilities))
+                    self.mqtt_client, self.capabilities, self.client_id))
 
                 self.running_script = 1
 

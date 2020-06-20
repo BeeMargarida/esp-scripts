@@ -110,15 +110,15 @@ class Server():
                     await self.mqtt_client_metrics.publish(
                         "telemetry/%s/running" % self.client_id, str(self.running_script), qos=0)
 
+                    nr_nodes = len(self.assigned_nodes.split(" "))
+                    if self.assigned_nodes == "":
+                        nr_nodes = 0
                     assigned_nodes_dict = dict(
                         nodes=str(self.assigned_nodes),
-                        nr=str(len(self.assigned_nodes.split(" ")))
+                        nr=str(nr_nodes)
                     )
                     await self.mqtt_client_metrics.publish(
-                        "telemetry/%s/nodes" % self.client_id, ujson.dumps(assigned_nodes_dict), qos=0)
-
-                    # await self.mqtt_client_metrics.publish(
-                    #     "telemetry/%s/info" % self.client_id, os.uname(), qos=1)
+                        "telemetry/%s/nodes" % self.ip, ujson.dumps(assigned_nodes_dict), qos=0)
 
                     if sys.platform != "linux":
                         await self.mqtt_client_metrics.publish(
@@ -254,25 +254,17 @@ class Server():
                 # delete previous script
                 await self.delete_script()
 
-                if sys.platform != "linux":
-                    # save script in .py file
-                    f = open("script.py", "w")
-                    read_l = 0
-                    while read_l < l:
-                        tmp = await reader.readline()
-                        read_l += len(tmp)
-                        f.write(tmp)
-                    f.close()
-                else:
-                    f = open("script.py", "w")
-                    read_l = 0
-                    postquery = b''
-                    while read_l < l:
-                        tmp = await reader.read(l)
-                        read_l += len(tmp)
-                        postquery += tmp
-                    f.write(postquery)
-                    f.close()
+                gc.collect()
+
+                # save script in .py file
+                f = open("script.py", "w")
+                read_l = 0
+                while read_l < l:
+                    tmp = await reader.read(1000)
+                    read_l += len(tmp)
+                    f.write(tmp)
+                    gc.collect()
+                f.close()
 
             except MemoryError as e:
                 print("Memory Error on write")
@@ -292,6 +284,7 @@ class Server():
 
             try:
                 print("File written!")
+                gc.collect()
 
                 # call and execute script
                 import script

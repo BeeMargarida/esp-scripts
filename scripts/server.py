@@ -64,7 +64,8 @@ class Server():
         try:
             loop = asyncio.get_event_loop()
             loop.set_exception_handler(self.handle_exceptions)
-
+            
+            self.script_task = None
             self.metrics_task = loop.create_task(self.metrics())
             self.server = asyncio.start_server(self.serve, "0.0.0.0", 80)
             self.server_task = loop.create_task(self.server)
@@ -120,6 +121,9 @@ class Server():
                     await self.mqtt_client_metrics.publish(
                         "telemetry/%s/nodes" % self.ip, ujson.dumps(assigned_nodes_dict), qos=0)
 
+                    # await self.mqtt_client_metrics.publish(
+                    #     "telemetry/%s/info" % self.client_id, os.uname(), qos=1)
+
                     if sys.platform != "linux":
                         await self.mqtt_client_metrics.publish(
                             "telemetry/%s/flash_size" % self.client_id, str(esp.flash_size()), qos=0)
@@ -145,11 +149,11 @@ class Server():
             # cancel script task
             if self.script_task:
                 self.script_task.cancel()
+                self.script_task = None
 
             # cancel server task
             self.server.close()
             self.server_task.cancel()
-
             if self.mqtt_client.isconnected():
                 await self.mqtt_client.disconnect()
             self.mqtt_client = None
@@ -157,7 +161,7 @@ class Server():
             if sys.platform != "linux":
                 self.mqtt_client = MQTTClient(config)
             else:
-                config["client_id"] = "linux"
+                config['client_id'] = ubinascii.hexlify(self.client_id)
                 self.mqtt_client = MQTTClient(**config)
 
             self.memory_error = False
@@ -215,12 +219,8 @@ class Server():
         request_info = req.find('GET /ping')
         if request_info != -1:
             print("GET /ping")
-            data = {}
-            data["status"] = 1
-            data["running"] = self.running_script
-            data_str = ujson.dumps(data)
-            data_len = len(bytes(data_str, "utf-8"))
-            await writer.awrite("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length:" + str(data_len) + "\r\n\r\n" + data_str)
+            req = await reader.read(256)
+            await writer.awrite("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nOk.\r\n")
             await writer.aclose()
             return
 
@@ -253,8 +253,6 @@ class Server():
 
                 # delete previous script
                 await self.delete_script()
-
-                gc.collect()
 
                 # save script in .py file
                 f = open("script.py", "w")
@@ -316,11 +314,11 @@ class Server():
 
             except MemoryError as e:
                 print("Memory Error")
-                await writer.awrite("HTTP/1.1 413 Request Entity Too Large\r\nContent-Type: text/plain\r\n\r\n" + str(e) + "\r\n")
+                await writer.awrite("HTTP/1.1 413\r\nContent-Type: text/html\r\n\r\n" + str(e) + "\r\n")
                 await writer.aclose()
 
                 loop = asyncio.get_event_loop()
-                loop.create_task(self.failsafe(False))
+                loop.create_task(self.failsafe(True))
                 return
             except OSError as e:
                 print("OSERROR: " + str(e))

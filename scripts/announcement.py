@@ -24,8 +24,8 @@ class Announcer():
         self.capabilities = capabilities
         self.failure = failure
 
-        config['ssid'] = '-'
-        config['wifi_pw'] = '-'
+        config['ssid'] = ''
+        config['wifi_pw'] = ''
         config['server'] = self.mqtt_server
         config['port'] = 1883
         if sys.platform != "linux":
