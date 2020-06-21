@@ -89,17 +89,15 @@ class Server():
         if self.memory_error: 
             loop.create_task(self.random_failures())
             return
-        
-        div = 0x3fffffff // 100
-        error_probability = 0 + urandom.getrandbits(30) // div
+
+        error_probability = 5
 
         div = 0x3fffffff // 100
         will_fail = 0 + urandom.getrandbits(30) // div
 
         if will_fail < error_probability:
             div = 0x3fffffff // 10
-            will_fail = 1 + urandom.getrandbits(30) // div
-            self.failure_time = 0
+            self.failure_time = 0 + urandom.getrandbits(30) // div
         
         self.memory_error = True
         

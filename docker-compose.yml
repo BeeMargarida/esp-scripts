@@ -100,7 +100,7 @@ services:
   micropython:
     build: .
     ports:
-      - 8000:8080
+      - 8000-8060:8080
     environment: 
       CAPABILITIES: "micropython temperature humidity"
     command: sh -c "./micropython boot.py $$(cat /etc/hostname) $$(hostname -i) $${CAPABILITIES}"
