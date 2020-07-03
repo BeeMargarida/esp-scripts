@@ -78,35 +78,6 @@ class Server():
             }))
             loop.run_forever()
         except Exception as e:
-            print(e)
-
-    async def random_failures(self):
-        loop = asyncio.get_event_loop()
-        await asyncio.sleep(1)
-
-        if self.memory_error: 
-            loop.create_task(self.random_failures())
-            return
-
-        error_probability = 5
-
-        div = 0x3fffffff // 100
-        will_fail = 0 + urandom.getrandbits(30) // div
-
-        if will_fail < error_probability:
-            div = 0x3fffffff // 10
-            self.failure_time = 0 + urandom.getrandbits(30) // div
-            self.memory_error = True
-            
-            if self.script_task:
-                self.script_task.cancel()
-                self.script_task = None
-
-            await asyncio.sleep(self.failure_time)
-            loop.create_task(self.failsafe(True))
-        
-        loop.create_task(self.random_failures())
-        return
 
     def handle_exceptions(self, loop, context):
         exception = context['exception']
@@ -156,9 +127,6 @@ class Server():
                     )
                     await self.mqtt_client_metrics.publish(
                         "telemetry/%s/nodes" % self.ip, ujson.dumps(assigned_nodes_dict), qos=0)
-
-                    # await self.mqtt_client_metrics.publish(
-                    #     "telemetry/%s/info" % self.client_id, os.uname(), qos=1)
 
                     if sys.platform != "linux":
                         await self.mqtt_client_metrics.publish(
@@ -314,7 +282,6 @@ class Server():
                 return
             except Exception as e:
                 print("Write exception")
-                print(e)
                 print(e.args[0])
                 return
 

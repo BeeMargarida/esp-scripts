@@ -1,8 +1,20 @@
-# Docker micropython
+# ESP-FIRMWARE
+
+This repository contains the firmware developed for the work made in this [Node-RED repository](https://github.com/BeeMargarida/node-red).
+
+The first challenge was to find a way to take advantage of the constrained devices by making them run arbitrary scripts of code and communicate with other devices. Since both selected devices can run MicroPython firmware, Python was the selected programming language. Further, MicroPython already packs a small-footprint HTTP server and packages are available to implement asynchronous operations --- *i.e.* `uasyncio` --- and MQTT publisher-subscriber (*viz*  pub-sub) communication --- *i.e.* `MicroPython-mqtt`.
+
+As the devices must be able to receive arbitrary Python scripts (sent by Node-RED) and run them, the HTTP server was used to receive the Python payloads, which are then saved in the device SPI Flash and can be later executed (loaded to the SRAM). Further, the same HTTP server was used to implement an endpoint that returns the state of the device, as well as an announcing mechanism. These features built as an integral part of the firmware that runs on the devices. An overview of the components of the firmware can be seen in the figure below.
+
+The firmware also includes a `fail-safe` mechanism, safeguarding against `Out-of-Memory` errors that may happen during the lifespan of the device (SRAM usage). This mechanism resets all running tasks and recovers the HTTP server and communication channels. This is an important feature due to the high probability of these error's occurrence since the devices have limited memory. 
+
+![Overview](images/component-diagram.png)
+
+## Docker MicroPython
 
 Docker image that setups a micropython container that executes a boot script at startup.
 
-## Setup
+### Setup
 
 Download this folder or repo and in this directory run:
 
@@ -15,7 +27,7 @@ The micropython container contains the needed scripts for the wanted functionali
 
 `docker ps -q | xargs -n 1 docker inspect --format '{{ .Name }} {{range .NetworkSettings.Networks}} {{.IPAddress}}{{end}}' | sed 's#^/##';`
 
-## Setup with Node-RED
+### Setup with Node-RED
 
 After completing the instructions above, you may want to setup the containers with node-red. First, clone this [repo](https://github.com/S-R-MSc/margaridasilva-nodered). After the usual `npm install` you need to make a specific setup. 
 
@@ -25,7 +37,7 @@ Inside there you need to setup 2 things:
 
 With all that set up, we can start Node-RED and make a flow.
 
-### Commands 
+#### Commands 
 
 To stop a running container: 
 
@@ -35,7 +47,7 @@ To start a running container:
 
 `docker start testing_micropython_1_1`
 
-#### Aux commands
+**Aux commands**
 
 To access a container's logs:
 
