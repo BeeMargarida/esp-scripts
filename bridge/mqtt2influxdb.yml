@@ -66,3 +66,10 @@ points:
       state: $.payload.state
     tags:
       id: $.topic[1]
+
+  - measurement: status
+    topic: telemetry/+/status
+    fields:
+      value: $.payload
+    tags:
+      id: $.topic[1]

@@ -68,8 +68,6 @@ class Server():
             loop = asyncio.get_event_loop()
             loop.set_exception_handler(self.handle_exceptions)
 
-            loop.create_task(self.random_failures())
-            
             self.script_task = None
             self.metrics_task = loop.create_task(self.metrics())
             self.server = asyncio.start_server(self.serve, "0.0.0.0", 80)
@@ -98,13 +96,17 @@ class Server():
         if will_fail < error_probability:
             div = 0x3fffffff // 10
             self.failure_time = 0 + urandom.getrandbits(30) // div
+            self.memory_error = True
+            
+            if self.script_task:
+                self.script_task.cancel()
+                self.script_task = None
+
+            await asyncio.sleep(self.failure_time)
+            loop.create_task(self.failsafe(True))
         
-        self.memory_error = True
-        
-        loop.create_task(self.failsafe(True))
         loop.create_task(self.random_failures())
         return
-
 
     def handle_exceptions(self, loop, context):
         exception = context['exception']
@@ -125,20 +127,25 @@ class Server():
                 else:
                     current_time = utime.ticks_ms()
                     await self.mqtt_client_metrics.publish(
-                        "telemetry/%s/uptime" % self.client_id, str(utime.ticks_diff(current_time, self.start_time)), qos=0)
+                        "telemetry/%s/uptime" % self.ip, str(utime.ticks_diff(current_time, self.start_time)), qos=0)
 
                     if self.last_payload_id:
                         await self.mqtt_client_metrics.publish(
-                            "telemetry/%s/%s/last_payload" % (self.client_id, self.last_payload_id), str(self.last_payload), qos=0)
+                            "telemetry/%s/%s/last_payload" % (self.ip, self.last_payload_id), str(self.last_payload), qos=0)
 
                     await self.mqtt_client_metrics.publish(
-                        "telemetry/%s/free_ram" % self.client_id, str(gc.mem_free()), qos=0)
+                        "telemetry/%s/free_ram" % self.ip, str(gc.mem_free()), qos=0)
 
                     await self.mqtt_client_metrics.publish(
-                        "telemetry/%s/alloc_ram" % self.client_id, str(gc.mem_alloc()), qos=0)
+                        "telemetry/%s/alloc_ram" % self.ip, str(gc.mem_alloc()), qos=0)
 
                     await self.mqtt_client_metrics.publish(
-                        "telemetry/%s/running" % self.client_id, str(self.running_script), qos=0)
+                        "telemetry/%s/running" % self.ip, str(self.running_script), qos=0)
+
+                    status = 1
+                    if(self.memory_error): status = 0
+                    await self.mqtt_client_metrics.publish(
+                        "telemetry/%s/status" % self.ip, str(status), qos=0)
 
                     nr_nodes = len(self.assigned_nodes.split(" "))
                     if self.assigned_nodes == "":
@@ -155,12 +162,12 @@ class Server():
 
                     if sys.platform != "linux":
                         await self.mqtt_client_metrics.publish(
-                            "telemetry/%s/flash_size" % self.client_id, str(esp.flash_size()), qos=0)
+                            "telemetry/%s/flash_size" % self.ip, str(esp.flash_size()), qos=0)
                     else:
                         info = os.statvfs("/")
                         flash_size = (info[4] * info[1]) / 1024
                         await self.mqtt_client_metrics.publish(
-                            "telemetry/%s/flash_size" % self.client_id, str(flash_size), qos=0)
+                            "telemetry/%s/flash_size" % self.ip, str(flash_size), qos=0)
 
                     await asyncio.sleep(5)
             except Exception as e:
@@ -181,8 +188,10 @@ class Server():
                 self.script_task = None
 
             # cancel server task
-            self.server.close()
-            self.server_task.cancel()
+            if self.server:
+                self.server.close()
+                self.server_task.cancel()
+
             if self.mqtt_client.isconnected():
                 await self.mqtt_client.disconnect()
             self.mqtt_client = None
@@ -192,9 +201,6 @@ class Server():
             else:
                 config['client_id'] = ubinascii.hexlify(self.client_id)
                 self.mqtt_client = MQTTClient(**config)
-
-            if self.failure_time:
-                await asyncio.sleep(self.failure_time)
 
             self.memory_error = False
 
