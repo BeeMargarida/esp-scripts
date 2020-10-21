@@ -1,6 +1,6 @@
 # ESP-FIRMWARE
 
-This repository contains the firmware developed for the work made in this [Node-RED repository](https://github.com/BeeMargarida/node-red).
+This repository contains the firmware developed for the work made in this [Node-RED repository](https://github.com/BeeMargarida/node-red). Related to my [dissertation](https://repositorio-aberto.up.pt/handle/10216/128520)
 
 The first challenge was to find a way to take advantage of the constrained devices by making them run arbitrary scripts of code and communicate with other devices. Since both selected devices can run MicroPython firmware, Python was the selected programming language. Further, MicroPython already packs a small-footprint HTTP server and packages are available to implement asynchronous operations --- *i.e.* `uasyncio` --- and MQTT publisher-subscriber (*viz*  pub-sub) communication --- *i.e.* `MicroPython-mqtt`.
 
